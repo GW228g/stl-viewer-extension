@@ -32,7 +32,7 @@ The extension is not yet on the Chrome Web Store. In the meantime, you can insta
 
 ### Step 1 — Get the files
 
-Download the latest `stl-viewer-extension.zip` from the [Releases](../../releases) page and unzip it. You should have a folder called `stl-viewer-extension` containing three files: `manifest.json`, `content.js`, and `background.js`.
+Download the latest `stl-viewer-extension.zip` from the [Releases](../../releases) page and unzip it. You should have a folder called `stl-viewer-extension` containing `manifest.json`, `content.js`, `background.js`, and an `icons` folder.
 
 ### Step 2 — Open Chrome Extensions
 
