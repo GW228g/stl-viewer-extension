@@ -10,7 +10,7 @@ Preview student STL files directly in Google Classroom without downloading them.
 
 When a student submits an STL file and Google Classroom shows "No preview available," this extension adds a **View in 3D** button. Click it to open a full-screen interactive 3D viewer — rotate, zoom, and check for floating geometry before sending anything to a printer.
 
-![STL Viewer showing a keychain model on a grid floor](https://via.placeholder.com/800x450?text=Screenshot+coming+soon)
+![STL Viewer showing a 3D printed part on a grid floor, with triangle count, dimensions, and controls in the toolbar](docs/screenshot.jpg)
 
 ---
 
