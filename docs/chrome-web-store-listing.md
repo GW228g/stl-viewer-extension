@@ -135,9 +135,7 @@ parties.
 
 ## Screenshots
 
-- [docs/screenshot.jpg](screenshot.jpg) — already in the repo, shows the
-  viewer's toolbar, grid floor, and a rendered model. Chrome Web Store wants
-  1280×800 or 640×400; check the current screenshot's dimensions and crop/
-  resize if needed before uploading.
+- [docs/screenshot.jpg](screenshot.jpg) — already sized to 1280×800, ready to
+  upload as-is. Shows the viewer's toolbar, grid floor, and a rendered model.
 - Consider a second screenshot showing the floating-geometry warning badge,
   since that's a standout feature reviewers/teachers will want to see.
