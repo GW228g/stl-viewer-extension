@@ -105,8 +105,6 @@ The extension requires these host permissions to fetch files from Google Drive u
 - `https://classroom.google.com/*`
 - `https://drive.google.com/*`
 - `https://docs.google.com/*`
-- `https://*.google.com/*`
-- `https://*.googleapis.com/*`
 - `https://*.googleusercontent.com/*`
 
 To deploy to managed Chromebooks or school Chrome profiles without requiring developer mode, contact your Google Workspace admin about pushing extensions via the Admin Console. The extension can be deployed by Extension ID once it is published to the Chrome Web Store.
@@ -116,7 +114,7 @@ To deploy to managed Chromebooks or school Chrome profiles without requiring dev
 ## Roadmap
 
 - [ ] Chrome Web Store listing (Maker404 publisher)
-- [ ] Proper icon set
+- [x] Proper icon set
 - [ ] Touch and stylus support
 - [ ] Configurable printer bed size for the dimension check
 - [ ] Color-code model height by Z layer (useful for checking wall thickness)
