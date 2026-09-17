@@ -1,0 +1,168 @@
+STL VIEWER FOR GOOGLE CLASSROOM — PROJECT RECAP
+For Claude Code handoff
+================================================
+
+WHAT THIS IS
+------------
+A Chrome extension (Manifest V3) that adds a "View in 3D" button to Google Classroom
+whenever a student submits an STL file. Clicking the button opens a full-screen WebGL
+3D viewer directly in the browser — no downloading, no Tinkercad, no slicer needed.
+
+Built for James, a Tech Ed teacher at East Lyme Middle School in Niantic CT, who runs
+a 3D printing unit where students design keychains in Tinkercad and submit STL files
+via Google Classroom. Reviewing 30 submissions by downloading each file individually
+was the problem this solves.
+
+Intended to be published to the Chrome Web Store under the Maker404 brand
+(maker404.com — James's free K-6 educator resource site).
+
+
+THE THREE FILES
+---------------
+manifest.json   — MV3 Chrome extension manifest
+background.js   — Service worker: fetches STL files from Google Drive, bypassing CORS
+content.js      — Injected into Classroom/Drive pages: detects "No preview available",
+                  parses STL (binary + ASCII), runs floating geometry detection,
+                  renders with custom WebGL renderer (no dependencies)
+
+
+HOW IT WORKS — STEP BY STEP
+----------------------------
+1. Content script runs on classroom.google.com, drive.google.com, docs.google.com
+2. MutationObserver + polling watches for "No preview available" text to appear
+3. When found, it also searches for the Google Drive download URL using 6 strategies:
+   - anchor with .stl in href
+   - anchor with export=download in href
+   - anchor whose text contains "download"
+   - Drive file ID extracted from iframe src
+   - Drive file ID extracted from page URL
+   - Drive file ID from data attributes
+4. Injects a "View in 3D" button below the "No preview available" box
+5. On click, sends the URL to the background service worker via chrome.runtime.sendMessage
+6. Background worker fetches the file (credentials: include, bypasses CORS), converts
+   ArrayBuffer to base64, returns it to content script
+7. Content script decodes base64 back to ArrayBuffer, parses as STL
+8. Runs floating geometry detection (union-find algorithm on mesh components)
+9. Opens full-screen WebGL viewer overlay with toolbar and 3D canvas
+
+The file never touches disk. It lives in RAM during parsing/rendering only.
+GPU buffers are released when the viewer closes.
+
+
+WEBGL RENDERER (content.js)
+----------------------------
+- Custom from scratch, zero external dependencies (no Three.js, no libraries)
+- Two GLSL shader programs: one for the model (lit), one for the grid (flat color)
+- Lighting: two directional lights, ambient base, normal-based diffuse shading
+- Matrix math: custom column-major m4 object (mul, perspective, translate, rotX, rotY, rotZ)
+- Controls: mouse drag to rotate, Shift+drag to pan, scroll to zoom
+- Grid floor: 20x20 GL_LINES at the bottom of the model's bounding box
+- Auto-orient: detects thinnest axis of bounding box and pre-rotates model to lie flat
+  (important because Tinkercad exports can be oriented differently per student)
+  rotX(-90°) when Z is thin, rotZ(+90°) when X is thin, no rotation when Y is thin
+- Grid uses a separate MVP matrix (no autoRot) so it doesn't get double-rotated
+- Model MVP: center → autoRot → user drag rotation
+- Grid MVP: user drag rotation only (grid geometry already in post-autoRot space)
+
+
+STL PARSER (content.js)
+------------------------
+- Handles both binary STL and ASCII STL
+- Binary detection: checks exact byte length match (84 + nTri * 50)
+- ASCII detection: looks for "facet normal" keyword in decoded text
+- Binary fallback: accepts files >= expected size if ASCII check fails
+- Zero-normal fallback: if stored normals are all 0 0 0 (some CAD tools do this),
+  computes face normals from cross product of triangle edges instead
+- Applies to both parseBinary and parseASCII
+
+
+FLOATING GEOMETRY DETECTION (content.js)
+-----------------------------------------
+detectFloating(verts) — returns boolean
+
+Algorithm:
+1. Compute per-axis bounding box ranges (dx, dy, dz)
+2. Identify floor axis = thinnest dimension (matches auto-orient logic)
+3. Build union-find on triangles: connect any two triangles that share a vertex
+   (vertex positions hashed to grid cells at tolerance/2 resolution)
+4. For each connected component, find the minimum value along the floor axis
+5. If any component's floor-axis minimum is more than tol (1.5% of model size)
+   above the global floor minimum, return true (floating detected)
+6. Skip models > 200,000 triangles (performance safety valve)
+
+Result shown as "⚠️ Floating geometry detected" badge in the toolbar.
+Only appears when actually detected — no false positives on raised text or
+normal surface features.
+
+
+TOOLBAR (content.js — openViewer function)
+-------------------------------------------
+Left to right:
+  🖨️  STL Preview  [N ▲ triangles]  [W × D × H mm]  [⚠️ floating badge if needed]
+  ............hint text............  [↺ Reset View]  [✕ Close]
+
+Dimensions shown as W × D × H in print orientation (H = thickness).
+Computed from bbox dx/dy/dz based on which auto-orient rotation was applied.
+Hovering over dimensions shows tooltip: "Width × Depth × Height (print orientation)"
+
+Reset View button restores initial rotX, rotY, zoom and zeroes pan.
+
+
+KEY BUGS FIXED DURING DEVELOPMENT (in order)
+----------------------------------------------
+1. CORS: content script fetch blocked cross-origin — moved fetch to background
+   service worker which bypasses CORS with host_permissions
+2. TDZ error: "Cannot access 'gl' before initialization" — changed const gl to
+   let gl = null declared before the resize callback
+3. Blank canvas: canvas.width/height were 0 because resize() was called before
+   the overlay was in the DOM — moved resize() call to after WebGL init
+4. Grid cutting through model: autoRot was being applied twice to grid geometry
+   (once baked in, once via shared model matrix) — gave grid its own MVP matrix
+5. Model standing on edge: auto-orient now detects thin axis and pre-rotates
+6. Window listener leak: mouseup/mousemove on window were never removed — now
+   stored as named functions and removed in closeBtn.onclick
+
+
+MANIFEST PERMISSIONS
+---------------------
+host_permissions:
+  https://classroom.google.com/*
+  https://drive.google.com/*
+  https://docs.google.com/*
+  https://*.google.com/*
+  https://*.googleapis.com/*
+  https://*.googleusercontent.com/*
+
+content_scripts matches:
+  https://classroom.google.com/*
+  https://drive.google.com/*
+  https://docs.google.com/*
+
+all_frames: true (needed because the file viewer can be in an iframe)
+
+
+KNOWN LIMITATIONS
+-----------------
+- Only works as a developer/unpacked extension right now (not on Chrome Web Store yet)
+- Chrome Sync does not sync unpacked extensions — must be manually installed per computer
+- Floating detection skips models > 200,000 triangles
+- No touch/stylus support for rotation (only mouse)
+- If a student's Google account doesn't grant access to the Drive file, fetch fails
+  gracefully with an error message
+
+
+WHAT'S NEEDED FOR CHROME WEB STORE SUBMISSION
+-----------------------------------------------
+- Icon set: 16x16, 48x48, 128x128 PNG
+- Store promo graphic: 1280x800
+- Privacy policy page (suggested host: maker404.com/stl-viewer-privacy)
+  Key language: "The extension fetches STL files transiently into browser memory
+  for 3D rendering. No data is stored, logged, or transmitted to any server.
+  Files are never written to disk."
+- Update manifest: add "icons" field pointing to the icon files
+- Rebrand: name, description, and icon should reflect Maker404
+
+
+CURRENT VERSION
+---------------
+v1.2.0
