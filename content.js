@@ -639,6 +639,11 @@
     return null;
   }
 
+  // Google's own help/account pages sometimes contain links with "download" in
+  // their text (e.g. "make sure you are signed in" help articles) — never
+  // treat those as the file's download URL.
+  const NON_FILE_HOSTS = /^(support|myaccount|accounts|policies|about)\.google\.com$/i;
+
   function findDownloadUrl() {
     // 1. Any anchor whose href explicitly contains ".stl"
     for (const a of document.querySelectorAll('a[href]')) {
@@ -650,27 +655,38 @@
       if (/export=download/i.test(a.href) || /drive\.google\.com\/uc/i.test(a.href)) return a.href;
     }
 
-    // 3. Any anchor whose visible text contains "download" (catches "↓ Download" with icons)
-    for (const a of document.querySelectorAll('a[href]')) {
-      if (/download/i.test(a.textContent) && /^https:/i.test(a.href)) return a.href;
-    }
-
-    // 4. Extract Drive file ID from any iframe src on the page
+    // 3. Extract Drive file ID from any iframe src on the page
     for (const iframe of document.querySelectorAll('iframe[src]')) {
       const id = driveIdFromUrl(iframe.src);
       if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
     }
 
-    // 5. Extract Drive file ID from the current page URL itself
+    // 4. Extract Drive file ID from the current page URL itself
     const id = driveIdFromUrl(location.href);
     if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
 
-    // 6. Check data attributes on any element (some viewers store the ID there)
-    for (const el of document.querySelectorAll('[data-id],[data-fileid],[data-file-id],[data-docid]')) {
+    // 5. Check data attributes on any element (some viewers store the ID there).
+    //    Prefer one explicitly marked as the selected/active file if present.
+    const candidates = [...document.querySelectorAll('[data-id],[data-fileid],[data-file-id],[data-docid]')];
+    const selected = candidates.find(el => el.getAttribute('aria-selected') === 'true');
+    for (const el of selected ? [selected, ...candidates] : candidates) {
       const raw = el.dataset.id || el.dataset.fileid || el.dataset.fileId || el.dataset.docid;
       if (raw && /^[a-zA-Z0-9_-]{20,}$/.test(raw)) {
         return `https://drive.google.com/uc?export=download&id=${raw}`;
       }
+    }
+
+    // 6. Last resort: any anchor whose visible text contains "download"
+    //    (catches "↓ Download" with icons) — excluding Google's own
+    //    help/support pages, which are never the actual file.
+    for (const a of document.querySelectorAll('a[href]')) {
+      if (!/download/i.test(a.textContent) || !/^https:/i.test(a.href)) continue;
+      try {
+        if (NON_FILE_HOSTS.test(new URL(a.href).hostname)) continue;
+      } catch {
+        continue;
+      }
+      return a.href;
     }
 
     return null;
@@ -735,10 +751,16 @@
       msg.textContent = '';
 
       try {
+        // Re-resolve the URL on every click (not just at injection time) so a
+        // "Try Again" after a failed guess re-scans the DOM instead of
+        // retrying the exact same wrong URL.
+        const fetchUrl = findDownloadUrl() || downloadUrl;
+        console.log('[STL Viewer] fetching', fetchUrl);
+
         // Route the fetch through the background service worker, which runs
         // outside any web page and is not subject to CORS restrictions.
         const response = await new Promise((resolve, reject) => {
-          chrome.runtime.sendMessage({ type: 'FETCH_STL', url: downloadUrl }, res => {
+          chrome.runtime.sendMessage({ type: 'FETCH_STL', url: fetchUrl }, res => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
