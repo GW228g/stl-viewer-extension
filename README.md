@@ -4,6 +4,7 @@
 ![Manifest](https://img.shields.io/badge/manifest-v3-brightgreen)
 ![Chrome Extension](https://img.shields.io/badge/platform-Chrome-yellow?logo=googlechrome&logoColor=white)
 ![Status](https://img.shields.io/badge/status-developer%20mode%20only-orange)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 Preview student STL files directly in Google Classroom without downloading them. Built for Tech Ed teachers running 3D printing units with Tinkercad.
 
