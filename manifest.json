@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "STL Viewer for Google Classroom",
+  "version": "1.2.0",
+  "description": "Preview STL 3D files directly in Google Classroom without downloading.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "https://classroom.google.com/*",
+    "https://drive.google.com/*",
+    "https://docs.google.com/*",
+    "https://*.google.com/*",
+    "https://*.googleapis.com/*",
+    "https://*.googleusercontent.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://classroom.google.com/*",
+        "https://drive.google.com/*",
+        "https://docs.google.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
