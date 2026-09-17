@@ -692,9 +692,14 @@
 
     const noPreviewEl = findNoPreviewEl();
     if (!noPreviewEl) return;
+    console.log('[STL Viewer] "No preview available" detected, looking for a download URL…');
 
     const downloadUrl = findDownloadUrl();
-    if (!downloadUrl) return;
+    if (!downloadUrl) {
+      console.log('[STL Viewer] no download URL found yet — will keep watching');
+      return;
+    }
+    console.log('[STL Viewer] download URL found, injecting button:', downloadUrl);
 
     injected = true;
 
@@ -784,6 +789,7 @@
      Boot  —  handle initial load + SPA navigation
   ═══════════════════════════════════════════════════════════════ */
   function boot() {
+    console.log('[STL Viewer] content script loaded on', location.href);
     tryInject();
     if (document.body) {
       new MutationObserver(tryInject).observe(document.body, { childList: true, subtree: true });
