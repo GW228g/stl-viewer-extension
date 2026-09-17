@@ -347,7 +347,7 @@
 
     const hint = Object.assign(document.createElement('span'),
       { textContent: 'Drag · rotate   Shift+drag · pan   Scroll · zoom' });
-    hint.style.cssText = 'color:#2d3154;font-size:11px;margin-left:auto;flex-shrink:1;overflow:hidden;white-space:nowrap;';
+    hint.style.cssText = 'color:#8892c8;font-size:11px;margin-left:auto;flex-shrink:1;overflow:hidden;white-space:nowrap;';
 
     const resetBtn = Object.assign(document.createElement('button'), { textContent: '↺ Reset View' });
     resetBtn.style.cssText = [
