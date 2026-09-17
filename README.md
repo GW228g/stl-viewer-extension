@@ -1,5 +1,10 @@
 # STL Viewer for Google Classroom
 
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Manifest](https://img.shields.io/badge/manifest-v3-brightgreen)
+![Chrome Extension](https://img.shields.io/badge/platform-Chrome-yellow?logo=googlechrome&logoColor=white)
+![Status](https://img.shields.io/badge/status-developer%20mode%20only-orange)
+
 Preview student STL files directly in Google Classroom without downloading them. Built for Tech Ed teachers running 3D printing units with Tinkercad.
 
 When a student submits an STL file and Google Classroom shows "No preview available," this extension adds a **View in 3D** button. Click it to open a full-screen interactive 3D viewer — rotate, zoom, and check for floating geometry before sending anything to a printer.
