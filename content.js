@@ -176,6 +176,22 @@
   /* ═══════════════════════════════════════════════════════════════
      Bounding Box
   ═══════════════════════════════════════════════════════════════ */
+  // Decide which axis (if any) is the print-bed normal for a flat model.
+  // An axis only counts as "thin" when it's clearly thinner than the next-
+  // smallest axis (here, less than half) — not just marginally the smallest
+  // of the three. Without that margin, a naturally tall model (a figurine, a
+  // lighthouse) whose footprint is only slightly narrower on one side gets
+  // tipped onto its side for no reason. Returns 0 (X), 2 (Z), or null
+  // (assume the file is already Y-up — includes the case where Y itself is
+  // the thinnest axis).
+  function findThinAxis(dx, dy, dz) {
+    const dims = [dx, dy, dz];
+    const order = [0, 1, 2].sort((a, b) => dims[a] - dims[b]);
+    const [thinIdx, midIdx] = order;
+    if (thinIdx !== 1 && dims[thinIdx] <= dims[midIdx] * 0.5) return thinIdx;
+    return null;
+  }
+
   function boundingBox(verts) {
     let x0=Infinity, y0=Infinity, z0=Infinity;
     let x1=-Infinity, y1=-Infinity, z1=-Infinity;
@@ -229,11 +245,13 @@
     const size = Math.max(dx, dy, dz) || 1;
     const tol  = size * 0.015; // 1.5% tolerance — small gaps don't count as floating
 
-    // Floor axis = thinnest dimension (matches the auto-orient logic)
+    // Floor axis = clearly-thinnest dimension (matches the auto-orient logic —
+    // see findThinAxis()); defaults to Y for anything that isn't a flat plaque.
+    const thinAxis = findThinAxis(dx, dy, dz);
     let floorOff, globalFloorMin;
-    if (dy <= dx && dy <= dz)      { floorOff = 1; globalFloorMin = mnY; }
-    else if (dz <= dx && dz <= dy) { floorOff = 2; globalFloorMin = mnZ; }
-    else                           { floorOff = 0; globalFloorMin = mnX; }
+    if (thinAxis === 2)      { floorOff = 2; globalFloorMin = mnZ; }
+    else if (thinAxis === 0) { floorOff = 0; globalFloorMin = mnX; }
+    else                     { floorOff = 1; globalFloorMin = mnY; }
 
     // Union-Find: connect triangles that share a vertex (within tolerance)
     const parent = new Int32Array(nTri);
@@ -279,29 +297,30 @@
   function openViewer(stl) {
     const { cx, cy, cz, size, dx, dy, dz, minY } = boundingBox(stl.verts);
 
-    // Auto-orient: find the thinnest axis — that's the print-bed normal for a flat model.
-    // We pre-rotate so it always maps to Y in the viewer, so the model lies flat on the grid
-    // regardless of how the student exported it from Tinkercad.
+    // Auto-orient: for a flat model (e.g. a Tinkercad keychain plaque), pre-rotate
+    // the clearly-thinnest axis to map to Y in the viewer so it lies flat on the
+    // grid regardless of how the student exported it. Tall models (figurines,
+    // lighthouses, etc.) are left as authored — see findThinAxis().
     //
     // rotX(-90°): (x,y,z)→(x, z,-y)  — old Z becomes new Y  (face was in XY plane)
     // rotZ(+90°): (x,y,z)→(-y, x, z) — old X becomes new Y  (face was in YZ plane)
-    // no rotation needed if Y is already thin   (face was in XZ plane, Tinkercad default)
+    const thinAxis = findThinAxis(dx, dy, dz);
     let autoRot = null;
-    let floorY  = (minY - cy) - size * 0.002;   // default: Y is thin
+    let floorY  = (minY - cy) - size * 0.002;   // default: already Y-up
 
-    if (dz < dx && dz < dy) {
+    if (thinAxis === 2) {
       autoRot = m4.rotX(-Math.PI / 2);            // Z is thin
       floorY  = -(dz / 2) - size * 0.002;
-    } else if (dx < dy && dx < dz) {
+    } else if (thinAxis === 0) {
       autoRot = m4.rotZ( Math.PI / 2);            // X is thin
       floorY  = -(dx / 2) - size * 0.002;
     }
 
     // Dimensions in print orientation: W × D × H where H is always the thickness
     let dimW, dimD, dimH;
-    if (!autoRot)                { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
-    else if (dz < dx && dz < dy){ dimW = Math.max(dx,dy); dimD = Math.min(dx,dy); dimH = dz; }
-    else                        { dimW = Math.max(dy,dz); dimD = Math.min(dy,dz); dimH = dx; }
+    if (thinAxis === 2)      { dimW = Math.max(dx,dy); dimD = Math.min(dx,dy); dimH = dz; }
+    else if (thinAxis === 0) { dimW = Math.max(dy,dz); dimD = Math.min(dy,dz); dimH = dx; }
+    else                     { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
     const dimStr = `${dimW.toFixed(1)} × ${dimD.toFixed(1)} × ${dimH.toFixed(1)} mm`;
 
     /* ── Overlay container ── */
