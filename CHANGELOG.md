@@ -4,6 +4,48 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.2.1] — 2026-09-29
+
+### Fixed
+- **Auto-orient tipping over tall models** — `findThinAxis()` previously
+  rotated a model whenever any bounding-box axis was even marginally the
+  smallest of the three, which worked for a flat keychain plaque but wrongly
+  flipped tall models (a lighthouse, a figurine) onto their side when their
+  footprint was only a few percent narrower on one axis. An axis is now only
+  treated as "thin" when it's less than half the next-smallest axis; applied
+  to both the auto-orient rotation and `detectFloating()`'s floor-axis
+  selection, which shared the same unbounded heuristic
+- **"Failed to fetch" on download** — narrowing `host_permissions` (see
+  below) accidentally dropped coverage for `drive.usercontent.google.com`,
+  the domain Google actually serves file bytes from (distinct from
+  `drive.google.com` and from `*.googleusercontent.com` despite the similar
+  name). Added it back specifically rather than reinstating a broad wildcard
+- **Download URL detection grabbing Google's own support links** —
+  `findDownloadUrl()`'s loosest strategy (any link with "download" in its
+  text) could match a Google help article instead of the actual file when
+  opening an STL directly from Google Drive's file list (as opposed to
+  through a Classroom submission). Reordered so the more reliable
+  iframe/URL/data-id strategies run first, excluded Google's own
+  support/account domains from the loose text match, and made the "View in
+  3D" button re-resolve the URL on every click instead of caching a
+  possibly-wrong one from injection time
+- **Near-invisible toolbar hint text** — the drag/pan/zoom control hint was
+  set to a color nearly identical to the toolbar's own background, making it
+  unreadable; changed to the same light lavender used elsewhere in the
+  toolbar
+
+### Added
+- Icon set (16/48/128px) and wired into `manifest.json`'s `icons` field —
+  one of the Chrome Web Store submission requirements
+
+### Changed
+- Narrowed `host_permissions` to only the domains the extension actually
+  fetches from, removing the unused broad `https://*.google.com/*` and
+  `https://*.googleapis.com/*` wildcards (reduces Chrome Web Store review
+  friction around overly broad permission requests)
+
+---
+
 ## [1.2.0] — 2026-09-17
 
 ### Added
