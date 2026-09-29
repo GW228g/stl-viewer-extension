@@ -102,6 +102,13 @@ page, and to fetch the file's bytes (using the user's existing session) so it
 can be rendered in the in-browser 3D viewer.
 ```
 
+**`https://drive.usercontent.google.com/*`**
+```
+Google Drive serves the actual file bytes for a download from this domain
+(separate from drive.google.com); required for the background fetch to
+succeed without a CORS error.
+```
+
 **`https://docs.google.com/*`**
 ```
 Google Classroom and Drive sometimes embed the file preview in a

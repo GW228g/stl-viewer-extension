@@ -104,6 +104,7 @@ The extension requires these host permissions to fetch files from Google Drive u
 
 - `https://classroom.google.com/*`
 - `https://drive.google.com/*`
+- `https://drive.usercontent.google.com/*`
 - `https://docs.google.com/*`
 - `https://*.googleusercontent.com/*`
 
