@@ -7,14 +7,19 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 ## [1.2.1] — 2026-09-29
 
 ### Fixed
-- **Auto-orient tipping over tall models** — `findThinAxis()` previously
-  rotated a model whenever any bounding-box axis was even marginally the
-  smallest of the three, which worked for a flat keychain plaque but wrongly
-  flipped tall models (a lighthouse, a figurine) onto their side when their
-  footprint was only a few percent narrower on one axis. An axis is now only
-  treated as "thin" when it's less than half the next-smallest axis; applied
-  to both the auto-orient rotation and `detectFloating()`'s floor-axis
-  selection, which shared the same unbounded heuristic
+- **Auto-orient showing tall models on their side** — the old heuristic
+  guessed the model's "up" axis by picking whichever bounding-box dimension
+  was even marginally the smallest of the three, which broke down for
+  genuinely tall/3D models (a lighthouse, a figurine) with no dramatically
+  thin axis to detect — confirmed against two real student submissions where
+  the model's true height (on the raw Z axis) got mapped horizontal instead.
+  Replaced with `determineUpAxis()`: Tinkercad's editor treats Z as vertical
+  height and exports STL in that same convention, so Z is now the default
+  "up" axis regardless of proportions; the exception is a flat plaque (a
+  keychain) whose thickness is clearly — at least 2x — thinner than the
+  other two axes, which is treated as "up" instead since that's the actual
+  print-bed normal for a flat part. Applied to both the auto-orient rotation
+  and `detectFloating()`'s floor-axis selection, which shared the same logic
 - **"Failed to fetch" on download** — narrowing `host_permissions` (see
   below) accidentally dropped coverage for `drive.usercontent.google.com`,
   the domain Google actually serves file bytes from (distinct from
