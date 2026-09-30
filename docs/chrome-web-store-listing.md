@@ -84,59 +84,13 @@ Drive whenever an STL file can't be previewed, so a teacher can inspect the
 
 ---
 
-## Permission justifications
+## Permission justifications & data usage disclosure
 
-Chrome Web Store requires a plain-language reason for each host permission.
-Suggested text per entry in `host_permissions`:
-
-**`https://classroom.google.com/*`**
-```
-Required to detect STL file submissions on Google Classroom assignment pages
-and inject the "View in 3D" button when Classroom cannot preview the file.
-```
-
-**`https://drive.google.com/*`**
-```
-Required to detect unsupported STL files on Google Drive's own file preview
-page, and to fetch the file's bytes (using the user's existing session) so it
-can be rendered in the in-browser 3D viewer.
-```
-
-**`https://drive.usercontent.google.com/*`**
-```
-Google Drive serves the actual file bytes for a download from this domain
-(separate from drive.google.com); required for the background fetch to
-succeed without a CORS error.
-```
-
-**`https://docs.google.com/*`**
-```
-Google Classroom and Drive sometimes embed the file preview in a
-docs.google.com iframe; this permission lets the same detection and viewer
-logic run inside that embedded frame.
-```
-
-**`https://*.googleusercontent.com/*`**
-```
-Google Drive serves some file content and preview iframes from
-googleusercontent.com subdomains; this permission is required for the
-background fetch of the file's bytes to succeed without a CORS error.
-```
-
----
-
-## Data usage disclosure (Privacy practices tab)
-
-For each category the dashboard asks about ("Does your extension collect or
-use this type of data?"), the honest answer here is **No** for all of them —
-personally identifiable information, health info, financial info,
-authentication info, personal communications, location, web history, user
-activity, and website content. The extension reads one file's binary content
-transiently, in-memory, and never stores or transmits it anywhere.
-
-You'll need to check the certification box confirming this disclosure is
-accurate, and that the extension doesn't sell or transfer user data to third
-parties.
+Moved to [CHROMEWEBSTORE.md](../CHROMEWEBSTORE.md) at the repo root, which
+tracks permissions, their justifications, and the data usage disclosure
+answers alongside `manifest.json` so the two stay in sync as permissions
+change. Copy the relevant text from there into the dashboard's Privacy
+practices tab.
 
 ---
 

@@ -108,6 +108,8 @@ The extension requires these host permissions to fetch files from Google Drive u
 - `https://docs.google.com/*`
 - `https://*.googleusercontent.com/*`
 
+See [CHROMEWEBSTORE.md](CHROMEWEBSTORE.md) for the justification behind each permission and the full data usage disclosure.
+
 To deploy to managed Chromebooks or school Chrome profiles without requiring developer mode, contact your Google Workspace admin about pushing extensions via the Admin Console. The extension can be deployed by Extension ID once it is published to the Chrome Web Store.
 
 ---
