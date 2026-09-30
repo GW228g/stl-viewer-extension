@@ -176,20 +176,24 @@
   /* ═══════════════════════════════════════════════════════════════
      Bounding Box
   ═══════════════════════════════════════════════════════════════ */
-  // Decide which axis (if any) is the print-bed normal for a flat model.
-  // An axis only counts as "thin" when it's clearly thinner than the next-
-  // smallest axis (here, less than half) — not just marginally the smallest
-  // of the three. Without that margin, a naturally tall model (a figurine, a
-  // lighthouse) whose footprint is only slightly narrower on one side gets
-  // tipped onto its side for no reason. Returns 0 (X), 2 (Z), or null
-  // (assume the file is already Y-up — includes the case where Y itself is
-  // the thinnest axis).
-  function findThinAxis(dx, dy, dz) {
+  // Determine which raw mesh axis should become "up" (Y) in the viewer.
+  // Tinkercad's own editor treats Z as vertical height, and exports STL in
+  // that same convention (matching standard 3D-printing/slicer convention,
+  // where Z is always the vertical "layer" axis) — so Z is the default "up"
+  // axis regardless of the model's proportions, tall or not.
+  //
+  // The one exception is a flat plaque (a keychain) whose physical thickness
+  // was authored along a *different* axis — detectable because that axis is
+  // clearly, dramatically thinner than the other two (here, less than half
+  // the next-smallest), not just marginally the smallest of the three. That
+  // thin axis becomes "up" instead, since it's the actual print-bed normal.
+  // Returns 0 (X), 1 (Y), or 2 (Z).
+  function determineUpAxis(dx, dy, dz) {
     const dims = [dx, dy, dz];
     const order = [0, 1, 2].sort((a, b) => dims[a] - dims[b]);
     const [thinIdx, midIdx] = order;
-    if (thinIdx !== 1 && dims[thinIdx] <= dims[midIdx] * 0.5) return thinIdx;
-    return null;
+    if (dims[thinIdx] <= dims[midIdx] * 0.5) return thinIdx; // clearly a flat plaque
+    return 2; // no clear plaque axis — assume Tinkercad's Z-up export convention
   }
 
   function boundingBox(verts) {
@@ -245,13 +249,12 @@
     const size = Math.max(dx, dy, dz) || 1;
     const tol  = size * 0.015; // 1.5% tolerance — small gaps don't count as floating
 
-    // Floor axis = clearly-thinnest dimension (matches the auto-orient logic —
-    // see findThinAxis()); defaults to Y for anything that isn't a flat plaque.
-    const thinAxis = findThinAxis(dx, dy, dz);
+    // Floor axis matches the auto-orient logic — see determineUpAxis().
+    const upAxis = determineUpAxis(dx, dy, dz);
     let floorOff, globalFloorMin;
-    if (thinAxis === 2)      { floorOff = 2; globalFloorMin = mnZ; }
-    else if (thinAxis === 0) { floorOff = 0; globalFloorMin = mnX; }
-    else                     { floorOff = 1; globalFloorMin = mnY; }
+    if (upAxis === 2)      { floorOff = 2; globalFloorMin = mnZ; }
+    else if (upAxis === 0) { floorOff = 0; globalFloorMin = mnX; }
+    else                   { floorOff = 1; globalFloorMin = mnY; }
 
     // Union-Find: connect triangles that share a vertex (within tolerance)
     const parent = new Int32Array(nTri);
@@ -297,30 +300,29 @@
   function openViewer(stl) {
     const { cx, cy, cz, size, dx, dy, dz, minY } = boundingBox(stl.verts);
 
-    // Auto-orient: for a flat model (e.g. a Tinkercad keychain plaque), pre-rotate
-    // the clearly-thinnest axis to map to Y in the viewer so it lies flat on the
-    // grid regardless of how the student exported it. Tall models (figurines,
-    // lighthouses, etc.) are left as authored — see findThinAxis().
+    // Auto-orient: pre-rotate the model's "up" axis (see determineUpAxis) to map
+    // to Y in the viewer — by default that's Z (Tinkercad's own export
+    // convention), unless a clearly-thinner plaque axis says otherwise.
     //
     // rotX(-90°): (x,y,z)→(x, z,-y)  — old Z becomes new Y  (face was in XY plane)
     // rotZ(+90°): (x,y,z)→(-y, x, z) — old X becomes new Y  (face was in YZ plane)
-    const thinAxis = findThinAxis(dx, dy, dz);
+    const upAxis = determineUpAxis(dx, dy, dz);
     let autoRot = null;
     let floorY  = (minY - cy) - size * 0.002;   // default: already Y-up
 
-    if (thinAxis === 2) {
-      autoRot = m4.rotX(-Math.PI / 2);            // Z is thin
+    if (upAxis === 2) {
+      autoRot = m4.rotX(-Math.PI / 2);            // Z becomes up
       floorY  = -(dz / 2) - size * 0.002;
-    } else if (thinAxis === 0) {
-      autoRot = m4.rotZ( Math.PI / 2);            // X is thin
+    } else if (upAxis === 0) {
+      autoRot = m4.rotZ( Math.PI / 2);            // X becomes up
       floorY  = -(dx / 2) - size * 0.002;
     }
 
     // Dimensions in print orientation: W × D × H where H is always the thickness
     let dimW, dimD, dimH;
-    if (thinAxis === 2)      { dimW = Math.max(dx,dy); dimD = Math.min(dx,dy); dimH = dz; }
-    else if (thinAxis === 0) { dimW = Math.max(dy,dz); dimD = Math.min(dy,dz); dimH = dx; }
-    else                     { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
+    if (upAxis === 2)      { dimW = Math.max(dx,dy); dimD = Math.min(dx,dy); dimH = dz; }
+    else if (upAxis === 0) { dimW = Math.max(dy,dz); dimD = Math.min(dy,dz); dimH = dx; }
+    else                   { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
     const dimStr = `${dimW.toFixed(1)} × ${dimD.toFixed(1)} × ${dimH.toFixed(1)} mm`;
 
     /* ── Overlay container ── */
