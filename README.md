@@ -20,7 +20,7 @@ When a student submits an STL file and Google Classroom shows "No preview availa
 - **Grid floor** — makes it immediately obvious if any part of the model is floating above the print bed
 - **Floating geometry detection** — automatic ⚠️ warning when disconnected mesh components are found
 - **Model dimensions** — shows W × D × H in mm in print orientation so you can check if it fits your printer
-- **Volume and estimated weight** — shows cm³ and approximate grams (solid PLA, so an upper bound) to help budget filament
+- **Volume and estimated weight** — shows cm³ and approximate grams of PLA at a selectable infill (10%–100%) to help budget filament
 - **Auto-orient** — detects which way the model was exported and rotates it flat automatically
 - **Reset View button** — one click to get back to the default angle
 - **Nothing stored** — the file loads into memory for rendering only, never touches disk

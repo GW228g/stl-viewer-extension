@@ -213,8 +213,35 @@
     return Math.abs(sum) / 6;
   }
 
+  // Surface area in mm²: half the cross-product magnitude of each triangle.
+  function meshSurfaceArea(verts) {
+    let sum = 0;
+    for (let i = 0; i < verts.length; i += 9) {
+      const ux = verts[i+3] - verts[i],   uy = verts[i+4] - verts[i+1], uz = verts[i+5] - verts[i+2];
+      const vx = verts[i+6] - verts[i],   vy = verts[i+7] - verts[i+1], vz = verts[i+8] - verts[i+2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      sum += Math.sqrt(nx * nx + ny * ny + nz * nz);
+    }
+    return sum / 2;
+  }
+
   // Density of PLA, the filament most school printers use.
   const PLA_G_PER_CM3 = 1.24;
+
+  // Roughly 3 walls plus top/bottom layers, in mm. Slicers print this shell
+  // solid regardless of the infill setting, so thin parts (a keychain) weigh
+  // close to their full volume even at 10% infill.
+  const SHELL_MM = 1.2;
+
+  // Filament weight in grams: a solid shell around the surface (capped at the
+  // whole volume for very thin parts) plus the infill fraction of the interior.
+  function estimateGrams(volMm3, areaMm2, infill) {
+    const shell = Math.min(volMm3, areaMm2 * SHELL_MM);
+    return (shell + (volMm3 - shell) * infill) / 1000 * PLA_G_PER_CM3;
+  }
+
+  // Infill choice carries over between models viewed in the same page session.
+  let lastInfill = 20;
 
   function boundingBox(verts) {
     let x0=Infinity, y0=Infinity, z0=Infinity;
@@ -345,16 +372,21 @@
     else                   { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
     const dimStr = `${dimW.toFixed(1)} × ${dimD.toFixed(1)} × ${dimH.toFixed(1)} mm`;
 
-    // Volume + estimated weight. Weight assumes a 100% solid PLA print, so it's
-    // an upper bound — real prints with infill weigh less. Empty (and hidden)
-    // when the volume is ~0, e.g. an open surface mesh or a file in meters.
-    const volCm3  = meshVolume(stl.verts) / 1000;
-    const grams   = volCm3 * PLA_G_PER_CM3;
-    const volStr  = volCm3 >= 0.005
-      ? `${volCm3.toFixed(volCm3 < 10 ? 2 : 1)} cm³ · ~${grams.toFixed(grams < 100 ? 1 : 0)} g`
-      : '';
-    const volTip  = 'Volume of the mesh, and its weight if printed 100% solid in PLA (1.24 g/cm³). ' +
-                    'Real prints use less with infill. Assumes millimetre units and a watertight mesh.';
+    // Volume + estimated PLA weight at the chosen infill. Hidden when the volume
+    // is ~0, e.g. an open surface mesh or a file exported in meters.
+    const volMm3  = meshVolume(stl.verts);
+    const volCm3  = volMm3 / 1000;
+    const areaMm2 = meshSurfaceArea(stl.verts);
+    const showVol = volCm3 >= 0.005;
+    let infill    = lastInfill;
+    const volText = () => {
+      const g = estimateGrams(volMm3, areaMm2, infill / 100);
+      return `${volCm3.toFixed(volCm3 < 10 ? 2 : 1)} cm³ · ~${g.toFixed(g < 100 ? 1 : 0)} g`;
+    };
+    const volTip  = 'Volume of the mesh, and its estimated weight in PLA (1.24 g/cm³) at the chosen infill, ' +
+                    'counting about 1.2 mm of solid shell around the surface, so thin parts barely change with ' +
+                    'infill. A rough guide — a slicer\'s number will differ. Assumes millimetre units and a ' +
+                    'watertight mesh.';
 
     /* ── Overlay container ── */
     const overlay = document.createElement('div');
@@ -387,8 +419,24 @@
     dims.style.cssText = 'color:#7986b8;font-size:12px;flex-shrink:0;';
     dims.title = 'Width × Depth × Height (print orientation)';
 
-    const vol = Object.assign(document.createElement('span'), { textContent: volStr, title: volTip });
-    vol.style.cssText = 'color:#7986b8;font-size:12px;flex-shrink:0;' + (volStr ? '' : 'display:none');
+    const vol = Object.assign(document.createElement('span'),
+      { textContent: showVol ? volText() : '', title: volTip });
+    vol.style.cssText = 'color:#7986b8;font-size:12px;flex-shrink:0;' + (showVol ? '' : 'display:none');
+
+    const infillSel = document.createElement('select');
+    infillSel.title = volTip;
+    infillSel.style.cssText = [
+      'background:#1e2133;color:#8892c8;border:1px solid #2d3154',
+      'border-radius:5px;padding:3px 4px;font-size:12px;cursor:pointer;flex-shrink:0',
+      showVol ? '' : 'display:none',
+    ].join(';');
+    for (let pct = 10; pct <= 100; pct += 10) {
+      infillSel.append(new Option(`${pct}% infill`, pct, false, pct === infill));
+    }
+    infillSel.onchange = () => {
+      infill = lastInfill = +infillSel.value;
+      vol.textContent = volText();
+    };
 
     // Floating geometry warning — only shown when detected
     const floatWarn = Object.assign(document.createElement('span'),
@@ -454,9 +502,10 @@
       ctx.fillText(dimStr, x, mid);
       x += ctx.measureText(dimStr).width + 14;
 
-      if (volStr) {
-        ctx.fillText(volStr, x, mid);
-        x += ctx.measureText(volStr).width + 14;
+      if (showVol) {
+        const volTxt = `${volText()} at ${infill}% infill`;
+        ctx.fillText(volTxt, x, mid);
+        x += ctx.measureText(volTxt).width + 14;
       }
 
       if (stl.isFloating) {
@@ -491,7 +540,7 @@
       overlay.remove();
     };
 
-    bar.append(icon, title, triCount, dims, vol, floatWarn, hint, resetBtn, saveBtn, closeBtn);
+    bar.append(icon, title, triCount, dims, vol, infillSel, floatWarn, hint, resetBtn, saveBtn, closeBtn);
 
     /* ── Canvas ── */
     const canvas = document.createElement('canvas');
