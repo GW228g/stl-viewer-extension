@@ -225,8 +225,9 @@
     return sum / 2;
   }
 
-  // Density of PLA, the filament most school printers use.
-  const PLA_G_PER_CM3 = 1.24;
+  // Filament densities in g/cm³ — typical values, they vary a little by brand.
+  // Adding a material is one line here; the dropdown is built from this table.
+  const MATERIALS = { PLA: 1.24, PETG: 1.27 };
 
   // Roughly 3 walls plus top/bottom layers, in mm. Slicers print this shell
   // solid regardless of the infill setting, so thin parts (a keychain) weigh
@@ -235,13 +236,15 @@
 
   // Filament weight in grams: a solid shell around the surface (capped at the
   // whole volume for very thin parts) plus the infill fraction of the interior.
-  function estimateGrams(volMm3, areaMm2, infill) {
+  function estimateGrams(volMm3, areaMm2, infill, density) {
     const shell = Math.min(volMm3, areaMm2 * SHELL_MM);
-    return (shell + (volMm3 - shell) * infill) / 1000 * PLA_G_PER_CM3;
+    return (shell + (volMm3 - shell) * infill) / 1000 * density;
   }
 
-  // Infill choice carries over between models viewed in the same page session.
-  let lastInfill = 20;
+  // Material and infill choices carry over between models viewed in the same
+  // page session.
+  let lastMaterial = 'PLA';
+  let lastInfill   = 20;
 
   function boundingBox(verts) {
     let x0=Infinity, y0=Infinity, z0=Infinity;
@@ -277,12 +280,18 @@
     return new Float32Array(pts);
   }
 
+  // Above this the check is skipped. Measured at about 0.25 ms per 1,000
+  // triangles (864,500 triangles took ~200 ms), so this caps it near a quarter
+  // of a second, and bounds the memory the vertex map can use.
+  const MAX_FLOAT_CHECK_TRIS = 1000000;
+
   /* Detects whether any disconnected mesh component fails to touch the print floor.
      Uses union-find on triangles connected by shared vertex positions, then checks
-     which components have no vertex within tolerance of the global floor-axis minimum. */
+     which components have no vertex within tolerance of the global floor-axis minimum.
+     Returns true/false, or null when the model is too large to check. */
   function detectFloating(verts) {
     const nTri = Math.floor(verts.length / 9);
-    if (nTri > 200000) return false; // skip for huge models — would be too slow
+    if (nTri > MAX_FLOAT_CHECK_TRIS) return null;
 
     // Find per-axis ranges to determine which axis is the floor
     let mnX=Infinity, mnY=Infinity, mnZ=Infinity;
@@ -372,21 +381,23 @@
     else                   { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
     const dimStr = `${dimW.toFixed(1)} × ${dimD.toFixed(1)} × ${dimH.toFixed(1)} mm`;
 
-    // Volume + estimated PLA weight at the chosen infill. Hidden when the volume
-    // is ~0, e.g. an open surface mesh or a file exported in meters.
+    // Volume + estimated weight at the chosen material and infill. Hidden when
+    // the volume is ~0, e.g. an open surface mesh or a file exported in meters.
     const volMm3  = meshVolume(stl.verts);
     const volCm3  = volMm3 / 1000;
     const areaMm2 = meshSurfaceArea(stl.verts);
     const showVol = volCm3 >= 0.005;
     let infill    = lastInfill;
+    let material  = lastMaterial;
     const volText = () => {
-      const g = estimateGrams(volMm3, areaMm2, infill / 100);
+      const g = estimateGrams(volMm3, areaMm2, infill / 100, MATERIALS[material]);
       return `${volCm3.toFixed(volCm3 < 10 ? 2 : 1)} cm³ · ~${g.toFixed(g < 100 ? 1 : 0)} g`;
     };
-    const volTip  = 'Volume of the mesh, and its estimated weight in PLA (1.24 g/cm³) at the chosen infill, ' +
-                    'counting about 1.2 mm of solid shell around the surface, so thin parts barely change with ' +
-                    'infill. A rough guide — a slicer\'s number will differ. Assumes millimetre units and a ' +
-                    'watertight mesh.';
+    const volTip  = () =>
+      `Volume of the mesh, and its estimated weight in ${material} (${MATERIALS[material]} g/cm³) at the ` +
+      'chosen infill, counting about 1.2 mm of solid shell around the surface, so thin parts barely change ' +
+      'with infill. A rough guide — a slicer\'s number will differ. Assumes millimetre units and a ' +
+      'watertight mesh.';
 
     /* ── Overlay container ── */
     const overlay = document.createElement('div');
@@ -400,8 +411,10 @@
     /* ── Toolbar ── */
     const bar = document.createElement('div');
     bar.style.cssText = [
-      'height:52px;background:#0a0b10;flex-shrink:0',
-      'display:flex;align-items:center;padding:0 18px;gap:12px',
+      // Wraps to a second row in a narrow window rather than pushing Save/Close
+      // off-screen; identical to a fixed 52px bar when everything fits.
+      'min-height:52px;box-sizing:border-box;background:#0a0b10;flex-shrink:0',
+      'display:flex;flex-wrap:wrap;align-items:center;padding:6px 18px;gap:6px 12px',
       'border-bottom:1px solid #1e2133',
     ].join(';');
 
@@ -420,37 +433,69 @@
     dims.title = 'Width × Depth × Height (print orientation)';
 
     const vol = Object.assign(document.createElement('span'),
-      { textContent: showVol ? volText() : '', title: volTip });
+      { textContent: showVol ? volText() : '', title: volTip() });
     vol.style.cssText = 'color:#7986b8;font-size:12px;flex-shrink:0;' + (showVol ? '' : 'display:none');
 
-    const infillSel = document.createElement('select');
-    infillSel.title = volTip;
-    infillSel.style.cssText = [
+    const selStyle = [
       'background:#1e2133;color:#8892c8;border:1px solid #2d3154',
       'border-radius:5px;padding:3px 4px;font-size:12px;cursor:pointer;flex-shrink:0',
       showVol ? '' : 'display:none',
     ].join(';');
+
+    const materialSel = document.createElement('select');
+    materialSel.style.cssText = selStyle;
+    for (const name of Object.keys(MATERIALS)) {
+      materialSel.append(new Option(name, name, false, name === material));
+    }
+
+    const infillSel = document.createElement('select');
+    infillSel.style.cssText = selStyle;
     for (let pct = 10; pct <= 100; pct += 10) {
       infillSel.append(new Option(`${pct}% infill`, pct, false, pct === infill));
     }
-    infillSel.onchange = () => {
-      infill = lastInfill = +infillSel.value;
-      vol.textContent = volText();
-    };
 
-    // Floating geometry warning — only shown when detected
-    const floatWarn = Object.assign(document.createElement('span'),
-      { textContent: '⚠️ Floating geometry detected' });
-    floatWarn.style.cssText = [
-      'background:#7a3800;color:#ffab40;font-size:12px',
-      'padding:3px 9px;border-radius:4px;font-weight:500;flex-shrink:0',
-      stl.isFloating ? '' : 'display:none',
-    ].join(';');
-    floatWarn.title = 'One or more parts of this model are not connected to the print bed and will not print correctly.';
+    const refreshWeight = () => {
+      vol.textContent = volText();
+      vol.title = materialSel.title = infillSel.title = volTip();
+    };
+    materialSel.onchange = () => { material = lastMaterial = materialSel.value; refreshWeight(); };
+    infillSel.onchange   = () => { infill   = lastInfill   = +infillSel.value;  refreshWeight(); };
+    materialSel.title = infillSel.title = volTip();
+
+    // Floating-geometry check. It runs just after the viewer's first paint (see
+    // the end of openViewer), so the pill starts as "checking" and settles into
+    // one of the other states — including an explicit "clear", so a missing
+    // warning always means the check passed, never that it didn't run.
+    const FLOAT_STATES = {
+      checking: { text: '⏳ Checking for floating geometry…', bg: '#1e2133', fg: '#8892c8',
+                  tip: 'Checking whether any part of the model is disconnected from the print bed…' },
+      floating: { text: '⚠️ Floating geometry detected', bg: '#7a3800', fg: '#ffab40',
+                  tip: 'One or more parts of this model are not connected to the print bed and will not print correctly.' },
+      clear:    { text: '✓ No floating geometry', bg: '#12331f', fg: '#6fcf97',
+                  tip: 'No part of this model is floating above the print bed.' },
+      skipped:  { text: 'Floating check skipped (model too large)', bg: '#1e2133', fg: '#8892c8',
+                  tip: 'This model has too many triangles to check for floating geometry.' },
+      failed:   { text: 'Floating check failed', bg: '#1e2133', fg: '#8892c8',
+                  tip: 'The floating-geometry check hit an error. See the browser console for details.' },
+    };
+    let floatState = 'checking';
+    const floatWarn = document.createElement('span');
+    floatWarn.style.cssText = 'font-size:12px;padding:3px 9px;border-radius:4px;font-weight:500;flex-shrink:0';
+    const setFloatState = (state) => {
+      floatState = state;
+      const s = FLOAT_STATES[state];
+      floatWarn.textContent = s.text;
+      floatWarn.title       = s.tip;
+      floatWarn.style.background = s.bg;
+      floatWarn.style.color      = s.fg;
+    };
+    setFloatState('checking');
 
     const hint = Object.assign(document.createElement('span'),
       { textContent: 'Drag · rotate   Shift+drag · pan   Scroll · zoom' });
-    hint.style.cssText = 'color:#8892c8;font-size:11px;margin-left:auto;flex-shrink:1;overflow:hidden;white-space:nowrap;';
+    // Zero flex-basis so the hint soaks up leftover space and shrinks away before
+    // the toolbar has to wrap, rather than its full width forcing an early wrap.
+    hint.style.cssText = 'color:#8892c8;font-size:11px;flex:1 1 0;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
 
     const resetBtn = Object.assign(document.createElement('button'), { textContent: '↺ Reset View' });
     resetBtn.style.cssText = [
@@ -503,22 +548,21 @@
       x += ctx.measureText(dimStr).width + 14;
 
       if (showVol) {
-        const volTxt = `${volText()} at ${infill}% infill`;
+        const volTxt = `${volText()} of ${material} at ${infill}% infill`;
         ctx.fillText(volTxt, x, mid);
         x += ctx.measureText(volTxt).width + 14;
       }
 
-      if (stl.isFloating) {
-        const warn = '\u26a0  Floating geometry detected';
-        const tw   = ctx.measureText(warn).width + 20;
-        const ph   = 24;
-        ctx.fillStyle = '#7a3800';
-        ctx.beginPath();
-        ctx.roundRect(x, mid - ph / 2, tw, ph, 4);
-        ctx.fill();
-        ctx.fillStyle = '#ffab40';
-        ctx.fillText(warn, x + 10, mid);
-      }
+      // Floating-check pill, in whatever state it's in when the PNG is saved
+      const pill = FLOAT_STATES[floatState];
+      const tw   = ctx.measureText(pill.text).width + 20;
+      const ph   = 24;
+      ctx.fillStyle = pill.bg;
+      ctx.beginPath();
+      ctx.roundRect(x, mid - ph / 2, tw, ph, 4);
+      ctx.fill();
+      ctx.fillStyle = pill.fg;
+      ctx.fillText(pill.text, x + 10, mid);
 
       // ── 3-D view ──
       ctx.drawImage(canvas, 0, BAR_H);
@@ -540,7 +584,12 @@
       overlay.remove();
     };
 
-    bar.append(icon, title, triCount, dims, vol, infillSel, floatWarn, hint, resetBtn, saveBtn, closeBtn);
+    // The buttons wrap together, right-aligned, if the toolbar runs out of room
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;align-items:center;gap:12px;margin-left:auto;flex-shrink:0';
+    actions.append(resetBtn, saveBtn, closeBtn);
+
+    bar.append(icon, title, triCount, dims, vol, materialSel, infillSel, floatWarn, hint, actions);
 
     /* ── Canvas ── */
     const canvas = document.createElement('canvas');
@@ -708,6 +757,22 @@
       requestAnimationFrame(render);
     };
     render();
+
+    // Floating-geometry check, deferred so the model paints first; the toolbar
+    // pill shows the result when ready. A short timer rather than
+    // requestAnimationFrame, which is paused in a hidden tab and would leave the
+    // check waiting if the user switched away right after opening the viewer.
+    setTimeout(() => {
+      if (!overlay.isConnected) return; // closed before it ran
+      try {
+        const floating = detectFloating(stl.verts);
+        if (!overlay.isConnected) return;
+        setFloatState(floating === null ? 'skipped' : floating ? 'floating' : 'clear');
+      } catch (err) {
+        console.warn('[STL Viewer] floating check failed:', err);
+        setFloatState('failed');
+      }
+    }, 50);
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -890,9 +955,6 @@
 
         const stl = parseSTL(buf);
         if (stl.count === 0) throw new Error('No triangles found — is this actually an STL file?');
-
-        btn.textContent = '⏳ Analysing…';
-        stl.isFloating = detectFloating(stl.verts);
 
         openViewer(stl);
 

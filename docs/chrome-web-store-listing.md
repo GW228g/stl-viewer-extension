@@ -34,12 +34,14 @@ FEATURES
 • Instant 3D preview — no downloading, no opening Tinkercad, no slicer
 • Grid floor — instantly see if any part of a model is floating above the
   print bed instead of touching it
-• Floating geometry detection — automatic warning when disconnected mesh
-  pieces are found, so you can catch print failures before they happen
+• Floating geometry detection — runs the moment the viewer opens and shows
+  its status in the toolbar (checking, all clear, or a warning when
+  disconnected mesh pieces are found), so you can catch print failures
+  before they happen
 • Model dimensions — width × depth × height in mm, in print orientation, so
   you know at a glance whether it fits your printer's bed
-• Volume and estimated weight — cm³ and approximate grams of PLA at an
-  infill you choose (10%–100%), to help budget filament for a class set
+• Volume and estimated weight — cm³ and approximate grams of PLA or PETG at
+  an infill you choose (10%–100%), to help budget filament for a class set
 • Auto-orient — detects how the model was exported and lays it flat
   automatically, regardless of how a student's Tinkercad export came out
 • Save PNG — export the current view (with dimensions and warnings) as an

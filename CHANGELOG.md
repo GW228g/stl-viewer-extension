@@ -4,6 +4,38 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.4.0] — 2026-10-04
+
+### Added
+- **Material selector** (PLA / PETG) next to the infill selector, using typical
+  densities of 1.24 and 1.27 g/cm³. The choice carries over between models in
+  the same page session and appears in the Save PNG header (e.g.
+  `~15.4 g of PETG at 20% infill`). Materials live in one `MATERIALS` table,
+  so adding another is a one-line change
+- **Floating-check status in the toolbar** — a pill that reads "Checking for
+  floating geometry…" while it runs, then "✓ No floating geometry" or the
+  existing warning, with explicit "skipped" and "failed" states. A missing
+  warning therefore always means the check passed, never that it didn't run.
+  The Save PNG header shows whichever state it's in when saved
+
+### Changed
+- **The floating check no longer delays the viewer.** It used to run before
+  the viewer opened; it now runs just after the first paint, on a short
+  timer rather than `requestAnimationFrame` so it still completes if the tab
+  is in the background
+- **Floating-check limit raised from 200,000 to 1,000,000 triangles.** The old
+  cap was far more cautious than needed: the check measures about 0.25 ms per
+  1,000 triangles (864,500 triangles took roughly 200 ms), so large-but-normal
+  models like 3DBenchy (225,706 triangles) were being skipped silently
+
+### Fixed
+- **Toolbar pushing Save PNG and Close off-screen in narrower windows** — the
+  toolbar now gives up space in order: the control hint shrinks first, then
+  the buttons wrap together onto a second row. Nothing is hidden or lost.
+  Checked from 600 to 1366 px wide
+
+---
+
 ## [1.3.0] — 2026-10-04
 
 ### Added
