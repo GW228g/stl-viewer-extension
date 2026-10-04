@@ -4,6 +4,19 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.3.0] — 2026-10-04
+
+### Added
+- **Volume and estimated weight** in the toolbar and the Save PNG header —
+  e.g. `7.72 cm³ · ~9.6 g`. Volume is computed from the mesh with signed
+  tetrahedron sums (`meshVolume()`), so it's independent of winding order and
+  where the model sits relative to the origin. Weight assumes a 100% solid PLA
+  print (1.24 g/cm³), which makes it an upper bound — real prints with infill
+  weigh less. Assumes millimetre units and a watertight mesh; hidden when the
+  volume is ~0 (e.g. an open surface mesh, or a file exported in meters)
+
+---
+
 ## [1.2.1] — 2026-09-29
 
 ### Fixed
