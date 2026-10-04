@@ -38,6 +38,8 @@ FEATURES
   pieces are found, so you can catch print failures before they happen
 • Model dimensions — width × depth × height in mm, in print orientation, so
   you know at a glance whether it fits your printer's bed
+• Volume and estimated weight — cm³ and approximate grams of filament
+  (assuming solid PLA, so it's an upper bound) to help budget a class set
 • Auto-orient — detects how the model was exported and lays it flat
   automatically, regardless of how a student's Tinkercad export came out
 • Save PNG — export the current view (with dimensions and warnings) as an

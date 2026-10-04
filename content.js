@@ -196,6 +196,26 @@
     return 2; // no clear plaque axis — assume Tinkercad's Z-up export convention
   }
 
+  // Volume in mm³ via the divergence theorem: the sum of signed tetrahedron
+  // volumes (origin, v0, v1, v2) over every triangle. The sign depends on
+  // winding, so take the absolute value. Only meaningful for a watertight
+  // mesh. Measured from the first vertex rather than (0,0,0) so models that
+  // sit far from the origin don't lose precision to cancellation.
+  function meshVolume(verts) {
+    const ox = verts[0], oy = verts[1], oz = verts[2];
+    let sum = 0;
+    for (let i = 0; i < verts.length; i += 9) {
+      const ax = verts[i]   - ox, ay = verts[i+1] - oy, az = verts[i+2] - oz;
+      const bx = verts[i+3] - ox, by = verts[i+4] - oy, bz = verts[i+5] - oz;
+      const cx = verts[i+6] - ox, cy = verts[i+7] - oy, cz = verts[i+8] - oz;
+      sum += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
+    }
+    return Math.abs(sum) / 6;
+  }
+
+  // Density of PLA, the filament most school printers use.
+  const PLA_G_PER_CM3 = 1.24;
+
   function boundingBox(verts) {
     let x0=Infinity, y0=Infinity, z0=Infinity;
     let x1=-Infinity, y1=-Infinity, z1=-Infinity;
@@ -325,6 +345,17 @@
     else                   { dimW = Math.max(dx,dz); dimD = Math.min(dx,dz); dimH = dy; }
     const dimStr = `${dimW.toFixed(1)} × ${dimD.toFixed(1)} × ${dimH.toFixed(1)} mm`;
 
+    // Volume + estimated weight. Weight assumes a 100% solid PLA print, so it's
+    // an upper bound — real prints with infill weigh less. Empty (and hidden)
+    // when the volume is ~0, e.g. an open surface mesh or a file in meters.
+    const volCm3  = meshVolume(stl.verts) / 1000;
+    const grams   = volCm3 * PLA_G_PER_CM3;
+    const volStr  = volCm3 >= 0.005
+      ? `${volCm3.toFixed(volCm3 < 10 ? 2 : 1)} cm³ · ~${grams.toFixed(grams < 100 ? 1 : 0)} g`
+      : '';
+    const volTip  = 'Volume of the mesh, and its weight if printed 100% solid in PLA (1.24 g/cm³). ' +
+                    'Real prints use less with infill. Assumes millimetre units and a watertight mesh.';
+
     /* ── Overlay container ── */
     const overlay = document.createElement('div');
     overlay.style.cssText = [
@@ -355,6 +386,9 @@
     const dims = Object.assign(document.createElement('span'), { textContent: dimStr });
     dims.style.cssText = 'color:#7986b8;font-size:12px;flex-shrink:0;';
     dims.title = 'Width × Depth × Height (print orientation)';
+
+    const vol = Object.assign(document.createElement('span'), { textContent: volStr, title: volTip });
+    vol.style.cssText = 'color:#7986b8;font-size:12px;flex-shrink:0;' + (volStr ? '' : 'display:none');
 
     // Floating geometry warning — only shown when detected
     const floatWarn = Object.assign(document.createElement('span'),
@@ -420,6 +454,11 @@
       ctx.fillText(dimStr, x, mid);
       x += ctx.measureText(dimStr).width + 14;
 
+      if (volStr) {
+        ctx.fillText(volStr, x, mid);
+        x += ctx.measureText(volStr).width + 14;
+      }
+
       if (stl.isFloating) {
         const warn = '\u26a0  Floating geometry detected';
         const tw   = ctx.measureText(warn).width + 20;
@@ -452,7 +491,7 @@
       overlay.remove();
     };
 
-    bar.append(icon, title, triCount, dims, floatWarn, hint, resetBtn, saveBtn, closeBtn);
+    bar.append(icon, title, triCount, dims, vol, floatWarn, hint, resetBtn, saveBtn, closeBtn);
 
     /* ── Canvas ── */
     const canvas = document.createElement('canvas');
