@@ -8,12 +8,18 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ### Added
 - **Volume and estimated weight** in the toolbar and the Save PNG header —
-  e.g. `7.72 cm³ · ~9.6 g`. Volume is computed from the mesh with signed
+  e.g. `67.2 cm³ · ~56.3 g`. Volume is computed from the mesh with signed
   tetrahedron sums (`meshVolume()`), so it's independent of winding order and
-  where the model sits relative to the origin. Weight assumes a 100% solid PLA
-  print (1.24 g/cm³), which makes it an upper bound — real prints with infill
-  weigh less. Assumes millimetre units and a watertight mesh; hidden when the
-  volume is ~0 (e.g. an open surface mesh, or a file exported in meters)
+  where the model sits relative to the origin
+- **Infill selector** (10%–100% in steps of 10, default 20%) that adjusts the
+  weight estimate; the choice carries over between models in the same page
+  session. Weight is PLA (1.24 g/cm³) with about 1.2 mm of solid shell
+  around the surface (`estimateGrams()`) and the infill percentage applied
+  only to the interior, so thin parts like keychains — which are mostly walls
+  and top/bottom layers — barely change with infill, as they wouldn't in a
+  slicer. A rough guide, not a slicer's number. Assumes millimetre units and
+  a watertight mesh; hidden when the volume is ~0 (e.g. an open surface mesh,
+  or a file exported in meters)
 
 ---
 
