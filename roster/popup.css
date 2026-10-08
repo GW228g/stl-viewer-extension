@@ -29,3 +29,10 @@ h1 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
 .switch:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
 
 .note { margin: 12px 2px 0; font-size: 11.5px; color: color-mix(in srgb, CanvasText 60%, transparent); }
+
+.advanced { margin-top: 12px; }
+.advanced summary {
+  cursor: pointer; padding: 2px; font-size: 12px;
+  color: color-mix(in srgb, CanvasText 65%, transparent);
+}
+.advanced .option { margin-top: 8px; }
