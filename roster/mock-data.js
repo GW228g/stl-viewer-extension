@@ -1,6 +1,8 @@
 // Invented class for developing the print sheet. No real student data.
 window.ROSTER_DATA = {
-  title: 'Keychain Print - Mock 3D Design Period 3',
+  title: 'Keychain Print',
+  course: 'Mock 3D Design',
+  section: 'Period 3',
   warnings: [],
   students: [
     { name: 'Avery Adams',     files: ['red_dragon.stl'] },

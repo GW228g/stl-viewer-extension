@@ -1,5 +1,5 @@
 // Renders the printable checklist.
-// Data: { title, students: [{ id, name, status, files: [], others: [{ name, isLink }] }], warnings: [] }
+// Data: { title, course, section, students: [{ id, name, status, files: [], others: [{ name, isLink }] }], warnings: [] }
 // It arrives by postMessage from the Classroom tab that opened this page; add ?mock to the
 // address to develop against invented data instead.
 (function () {
@@ -95,7 +95,9 @@
     for (const w of data.warnings || []) warningsBox.append(el('div', 'warn', w));
 
     sheet.replaceChildren();
-    sheet.append(el('h1', null, data.title || 'Print checklist'));
+    const className = [data.course, data.section].filter(Boolean).join(' - ');
+    sheet.append(el('h1', null, className || data.title || 'Print checklist'));
+    if (className && data.title) sheet.append(el('p', 'assignment', data.title));
     const fileCount = data.students.reduce((n, s) => n + s.files.length, 0);
     const date = new Date().toLocaleDateString();
     sheet.append(el('p', 'sub', `${data.students.length} students, ${fileCount} STL files - ${date}`));

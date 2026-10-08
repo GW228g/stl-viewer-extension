@@ -52,7 +52,17 @@
     return out;
   }
 
-  // Returns { title, students: [{ id, name, status, files, others }], warnings }.
+  // Class name and section (the second line, e.g. "Period 3"). The page header has a link to the
+  // class whose two spans are name and section; the sidebar's current class has the same pair.
+  function courseOf(doc) {
+    const spans = [...doc.querySelectorAll('h1 a[href*="/c/"] span.Vu2fZd')].map(textOf).filter(Boolean);
+    if (spans.length) return { course: spans[0], section: spans[1] || '' };
+    const current = 'a[aria-current="page"][data-id]';
+    const course = textOf(doc.querySelector(current + ' .XL4gNd'));
+    return { course, section: course ? textOf(doc.querySelector(current + ' .mefVYc')) : '' };
+  }
+
+  // Returns { title, course, section, students: [{ id, name, status, files, others }], warnings }.
   //  files:  .stl file names
   //  others: [{ name, isLink }] attachments that are not .stl (Tinkercad links, etc.)
   function scrape(doc) {
@@ -79,7 +89,7 @@
       if (students.some(s => !s.name)) warnings.push('Some students had no readable name.');
     }
 
-    return { title: clean(doc.title), students, warnings };
+    return { title: clean(doc.title), ...courseOf(doc), students, warnings };
   }
 
   const api = { scrape };
