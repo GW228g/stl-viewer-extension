@@ -42,11 +42,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // RFC 5987 `filename*=UTF-8''…` form (handles non-ASCII names) over `filename="…"`.
 function filenameFromDisposition(header) {
   if (!header) return null;
-  try {
-    const star = header.match(/filename\*\s*=\s*(?:UTF-8|utf-8)?'[^']*'([^;]+)/i);
-    if (star) return decodeURIComponent(star[1].trim());
-    const plain = header.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
-    if (plain) return (plain[1] || plain[2]).trim();
-  } catch { /* malformed header — fall through to null */ }
-  return null;
+  const star = header.match(/filename\*\s*=\s*(?:UTF-8|utf-8)?'[^']*'([^;]+)/i);
+  if (star) {
+    try { return decodeURIComponent(star[1].trim()); }
+    catch { /* malformed %-escape — fall back to the plain filename below */ }
+  }
+  const plain = header.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  return plain ? (plain[1] || plain[2]).trim() : null;
 }
