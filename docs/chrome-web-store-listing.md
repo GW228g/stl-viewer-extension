@@ -45,7 +45,7 @@ FEATURES
 • Auto-orient — detects how the model was exported and lays it flat
   automatically, regardless of how a student's Tinkercad export came out
 • Save PNG — export the current view (with dimensions and warnings) as an
-  image to send back to a student as feedback
+  image, named after the student's file, to send back as feedback
 • Nothing stored, nothing tracked — the file is loaded into memory only to
   render it, and is discarded the moment you close the viewer. No accounts,
   no analytics, no ads, no data ever leaves your browser.

@@ -1,6 +1,6 @@
 # STL Viewer for Google Classroom
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.1-blue)
 ![Manifest](https://img.shields.io/badge/manifest-v3-brightgreen)
 ![Chrome Extension](https://img.shields.io/badge/platform-Chrome-yellow?logo=googlechrome&logoColor=white)
 ![Status](https://img.shields.io/badge/status-developer%20mode%20only-orange)
@@ -23,6 +23,7 @@ When a student submits an STL file and Google Classroom shows "No preview availa
 - **Volume and estimated weight** — shows cm³ and approximate grams of PLA or PETG at a selectable infill (10%–100%) to help budget filament
 - **Auto-orient** — detects which way the model was exported and rotates it flat automatically
 - **Reset View button** — one click to get back to the default angle
+- **Save PNG** — exports the current view with its toolbar details (dimensions, weight, floating-check result) as an image to send back to a student as feedback. The file is named after the student's file, e.g. `Cool Boat-screenshot.png`
 - **Nothing stored** — the file loads into memory for rendering only, never touches disk
 
 ---
@@ -66,18 +67,22 @@ Open a Google Classroom assignment where a student has submitted an STL file. Yo
 | Drag | Rotate |
 | Shift + drag | Pan |
 | Scroll | Zoom in / out |
+| PLA / PETG | Material used for the weight estimate |
+| Infill (10%–100%) | Infill used for the weight estimate |
 | ↺ Reset View | Return to default angle |
+| 📷 Save PNG | Download the current view as `<student file name>-screenshot.png` |
 | ✕ Close | Close the viewer |
 
 **Reading the toolbar:**
 
 ```
-🖨️  STL Preview   6,592 ▲   60.2 × 30.1 × 5.0 mm   ⚠️ Floating geometry detected
+🖨️  STL Preview   6,592 ▲   60.2 × 30.1 × 5.0 mm   15.6 cm³ · ~15.1 g   PLA   20% infill   ⚠️ Floating geometry detected
 ```
 
 - Triangle count tells you roughly how complex the model is
 - Dimensions are Width × Depth × Height in the print orientation (H = thickness)
-- The orange warning badge only appears when the detector finds geometry that isn't connected to the print bed
+- Volume and weight are a rough estimate at the chosen material and infill (a slicer's number will differ), and assume millimetre units and a watertight mesh
+- The floating-geometry badge shows ⏳ while checking, ✓ green when clear, or an orange ⚠️ warning when it finds geometry that isn't connected to the print bed
 
 ---
 

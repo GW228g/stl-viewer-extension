@@ -4,6 +4,17 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.4.1] — 2026-10-08
+
+### Changed
+- **Save PNG is named after the student's file** — a submission called
+  `Cool Boat.stl` saves as `Cool Boat-screenshot.png` instead of the same
+  `stl-preview.png` every time, so feedback images no longer overwrite each
+  other or need renaming. The name comes from the download's
+  `Content-Disposition` header, falling back to an `.stl` link or on-page
+  text, then to `stl-preview-screenshot.png`. Characters Windows doesn't allow
+  in file names are stripped
+
 ## [1.4.0] — 2026-10-04
 
 ### Added
