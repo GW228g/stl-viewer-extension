@@ -15,14 +15,20 @@
         <option value="student">Student</option>
       </select>
     </label>
-    <span class="hint">Items marked <b>?</b> are guesses. Use the dropdown on a row to fix its color.</span>
+    <label>Sort names by
+      <select id="sort">
+        <option value="last">Last name</option>
+        <option value="first">First name</option>
+      </select>
+    </label>
+    <span class="hint">Items marked <b>?</b> are guesses. Use a row's dropdown to fix its color.</span>
     <button id="print" type="button">Print / Save as PDF</button>
   </div>
 
-  <main id="sheet"></main>
+  <div id="warnings"></div>
+  <main id="sheet"><p class="wait">Waiting for the roster from Classroom...
+    If this stays empty, go back to the Classroom tab and click "Print checklist" again.</p></main>
 
-  <!-- Mock data stands in until the extension supplies the real roster. -->
-  <script src="mock-data.js"></script>
   <script src="colors.js"></script>
   <script src="print.js"></script>
 </body>

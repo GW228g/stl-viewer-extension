@@ -17,7 +17,7 @@ h1 { font-size: 15px; margin: 0 0 2px; }
 .group { margin: 0 0 10px; }
 .group h2 {
   display: flex; justify-content: space-between;
-  margin: 0 0 3px; padding: 2px 4px; font-size: 12px; text-transform: capitalize;
+  margin: 0 0 3px; padding: 2px 4px; font-size: 12px;
   background: #e8eaed; border-bottom: 2px solid var(--swatch, #888);
   break-after: avoid;
 }
@@ -45,3 +45,9 @@ h1 { font-size: 15px; margin: 0 0 2px; }
   #sheet { padding: 0; max-width: none; }
   .group h2 { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+.wait { color: #555; font-size: 13px; }
+#warnings { max-width: 8.5in; margin: 8px auto 0; padding: 0 16px; }
+.warn { margin: 0 0 6px; padding: 6px 10px; background: #fef7e0; border: 1px solid #f9ab00; border-radius: 4px; font-size: 12px; }
+.note { color: #b06000; font-style: italic; }
+@media print { #warnings { display: none; } }

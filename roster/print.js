@@ -1,11 +1,16 @@
-// Renders the printable checklist from window.ROSTER_DATA:
-// { course, assignment, students: [{ name, files: [] }] }
+// Renders the printable checklist.
+// Data: { title, students: [{ id, name, status, files: [], others: [{ name, isLink }] }], warnings: [] }
+// It arrives by postMessage from the Classroom tab that opened this page; add ?mock to the
+// address to develop against invented data instead.
 (function () {
-  const { COLORS, groupByColor } = window.RosterColors;
-  const data = window.ROSTER_DATA;
+  const { COLORS, groupByColor, nameKey } = window.RosterColors;
+  const CLASSROOM_ORIGIN = 'https://classroom.google.com';
   const sheet = document.getElementById('sheet');
+  const warningsBox = document.getElementById('warnings');
   const modeSelect = document.getElementById('mode');
-  const overrides = {};   // "<name>|<file>" -> color chosen by the teacher
+  const sortSelect = document.getElementById('sort');
+  const overrides = {};   // item key -> color chosen by the teacher
+  let data = null;
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -18,6 +23,7 @@
     const r = el('div', 'row');
     r.append(el('span', 'box'), el('span', 'who', item.name), el('span', 'file', item.file));
     if (item.uncertain) r.append(el('span', 'guess', '?'));
+    if (item.pending) r.append(el('span', 'note', '(not turned in)'));
     if (withPicker) {
       const pick = el('select');
       for (const c of COLORS.concat('unsorted')) {
@@ -27,7 +33,7 @@
       }
       pick.value = item.color;
       pick.addEventListener('change', () => {
-        overrides[item.name + '|' + item.file] = pick.value;
+        overrides[item.key] = pick.value;
         render();
       });
       r.append(pick);
@@ -35,53 +41,88 @@
     return r;
   }
 
-  function colorView(cols) {
-    const { groups, notSubmitted } = groupByColor(data.students, overrides);
+  function section(title, count, cls) {
+    const box = el('section', 'group' + (cls ? ' ' + cls : ''));
+    const h = el('h2', null, title);
+    h.append(el('span', null, String(count)));
+    box.append(h);
+    return box;
+  }
+
+  function colorView(cols, sort) {
+    const { groups, notSubmitted, others } = groupByColor(data.students, overrides, { sort });
     for (const g of groups) {
-      const box = el('section', 'group');
+      const title = g.color === 'unsorted' ? 'Unsorted - check color' : g.color[0].toUpperCase() + g.color.slice(1);
+      const box = section(title, g.items.length);
       box.dataset.color = g.color;
-      const title = g.color === 'unsorted' ? 'Unsorted - check color' : g.color;
-      const h = el('h2', null, title);
-      h.append(el('span', null, String(g.items.length)));
-      box.append(h);
       for (const item of g.items) box.append(row({ ...item, color: g.color }, true));
       cols.append(box);
     }
+    if (others.length) {
+      const box = section('Not an STL (link or other file)', others.length);
+      for (const o of others) {
+        box.append(row({ name: o.name, file: (o.isLink ? 'link: ' : '') + o.title }, false));
+      }
+      cols.append(box);
+    }
     if (notSubmitted.length) {
-      const box = el('section', 'group missing');
-      const h = el('h2', null, 'Not submitted');
-      h.append(el('span', null, String(notSubmitted.length)));
-      box.append(h);
+      const box = section('Not submitted', notSubmitted.length, 'missing');
       for (const name of notSubmitted) box.append(row({ name, file: 'no file' }, false));
       cols.append(box);
     }
   }
 
-  function studentView(cols) {
+  function studentView(cols, sort) {
     const box = el('section', 'group');
-    const sorted = [...data.students].sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = [...data.students].sort((a, b) => nameKey(a.name, sort).localeCompare(nameKey(b.name, sort)));
     for (const s of sorted) {
-      if (!s.files.length) {
-        const r = row({ name: s.name, file: 'no file' }, false);
-        r.classList.add('missing');
+      const items = [
+        ...s.files.map(f => ({ name: s.name, file: f })),
+        ...(s.others || []).map(o => ({ name: s.name, file: (o.isLink ? 'link: ' : '') + o.name })),
+      ];
+      if (!items.length) items.push({ name: s.name, file: 'no file' });
+      for (const item of items) {
+        const r = row(item, false);
+        if (item.file === 'no file') r.classList.add('missing');
         box.append(r);
       }
-      for (const file of s.files) box.append(row({ name: s.name, file }, false));
     }
     cols.append(box);
   }
 
   function render() {
+    warningsBox.replaceChildren();
+    for (const w of data.warnings || []) warningsBox.append(el('div', 'warn', w));
+
     sheet.replaceChildren();
-    sheet.append(el('h1', null, data.course));
-    const total = data.students.reduce((n, s) => n + s.files.length, 0);
-    sheet.append(el('p', 'sub', `${data.assignment} - ${data.students.length} students, ${total} files`));
+    sheet.append(el('h1', null, data.title || 'Print checklist'));
+    const fileCount = data.students.reduce((n, s) => n + s.files.length, 0);
+    const date = new Date().toLocaleDateString();
+    sheet.append(el('p', 'sub', `${data.students.length} students, ${fileCount} STL files - ${date}`));
     const cols = el('div', 'cols');
-    (modeSelect.value === 'color' ? colorView : studentView)(cols);
+    (modeSelect.value === 'color' ? colorView : studentView)(cols, sortSelect.value);
     sheet.append(cols);
   }
 
-  modeSelect.addEventListener('change', render);
+  function setData(d) {
+    data = d;
+    render();
+  }
+
+  modeSelect.addEventListener('change', () => data && render());
+  sortSelect.addEventListener('change', () => data && render());
   document.getElementById('print').addEventListener('click', () => window.print());
-  render();
+
+  if (location.search.includes('mock')) {
+    const s = document.createElement('script');
+    s.src = 'mock-data.js';
+    s.onload = () => setData(window.ROSTER_DATA);
+    document.body.append(s);
+  } else {
+    window.addEventListener('message', (e) => {
+      if (e.origin !== CLASSROOM_ORIGIN || e.source !== window.opener) return;
+      if (e.data && e.data.type === 'roster-data') setData(e.data.payload);
+    });
+    if (window.opener) window.opener.postMessage({ type: 'roster-ready' }, CLASSROOM_ORIGIN);
+  }
 })();
