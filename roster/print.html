@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print Checklist</title>
+<link rel="stylesheet" href="print.css">
+</head>
+<body>
+  <div class="controls">
+    <strong>Print checklist</strong>
+    <label>Group by
+      <select id="mode">
+        <option value="color">Color</option>
+        <option value="student">Student</option>
+      </select>
+    </label>
+    <span class="hint">Items marked <b>?</b> are guesses. Use the dropdown on a row to fix its color.</span>
+    <button id="print" type="button">Print / Save as PDF</button>
+  </div>
+
+  <main id="sheet"></main>
+
+  <!-- Mock data stands in until the extension supplies the real roster. -->
+  <script src="mock-data.js"></script>
+  <script src="colors.js"></script>
+  <script src="print.js"></script>
+</body>
+</html>

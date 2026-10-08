@@ -1,0 +1,46 @@
+// Run with: node roster/test-colors.js
+const assert = require('assert');
+const { detectColor, groupByColor } = require('./colors.js');
+
+const cases = [
+  // [file name, expected color, expected certain]
+  ['red_dragon.stl',        'red',    true],
+  ['Red Dragon.STL',        'red',    true],
+  ['PurpleRobot.stl',       'purple', true],
+  ['grey_tank.stl',         'gray',   true],
+  ['black and white panda.stl', 'black', true],
+  ['Bleu Vase.stl',         'blue',   false],
+  ['gren frog.stl',         'green',  false],
+  ['yelow duck.stl',        'yellow', false],
+  ['Orang cat.stl',         'orange', false],
+  ['pruple_whale.stl',      'purple', false],
+  ['wite_ghost.stl',        'white',  false],
+  ['pinc heart.stl',        'pink',   false],
+  ['pnk heart.stl',         null],  // 3 letters is too ambiguous to guess
+  ['reddragon.stl',         'red',    false],
+  ['Mighty Sango.stl',      null],
+  ['crown.stl',             null],
+  ['block tower.stl',       null],
+  ['team logo.stl',         null],
+  ['',                      null],
+];
+
+for (const [file, color, certain] of cases) {
+  const got = detectColor(file);
+  assert.strictEqual(got.color, color, `${file}: expected ${color}, got ${got.color}`);
+  if (color) assert.strictEqual(got.certain, certain, `${file}: certain flag`);
+}
+
+const { groups, notSubmitted } = groupByColor(
+  [
+    { name: 'B', files: ['red_cat.stl'] },
+    { name: 'A', files: ['red_dog.stl', 'mystery.stl'] },
+    { name: 'C', files: [] },
+  ],
+  { 'A|mystery.stl': 'blue' }
+);
+assert.deepStrictEqual(groups.map(g => g.color), ['red', 'blue']);
+assert.deepStrictEqual(groups[0].items.map(i => i.name), ['A', 'B']);
+assert.deepStrictEqual(notSubmitted, ['C']);
+
+console.log('all color tests passed');
