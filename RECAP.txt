@@ -1,12 +1,14 @@
 STL VIEWER FOR GOOGLE CLASSROOM — PROJECT RECAP
-For Claude Code handoff
-================================================
+For Claude Code handoff · current for v1.4.2 (2026-10-08)
+=========================================================
 
 WHAT THIS IS
 ------------
 A Chrome extension (Manifest V3) that adds a "View in 3D" button to Google Classroom
-whenever a student submits an STL file. Clicking the button opens a full-screen WebGL
-3D viewer directly in the browser — no downloading, no Tinkercad, no slicer needed.
+(and Google Drive) whenever an STL file can't be previewed. Clicking it opens a
+full-screen WebGL viewer in the browser — no downloading, no Tinkercad, no slicer.
+Along with the model it shows dimensions, volume and estimated filament weight, and a
+floating-geometry check, and it can save the view as a PNG to send back to a student.
 
 Built for James, a Tech Ed teacher at East Lyme Middle School in Niantic CT, who runs
 a 3D printing unit where students design keychains in Tinkercad and submit STL files
@@ -14,155 +16,266 @@ via Google Classroom. Reviewing 30 submissions by downloading each file individu
 was the problem this solves.
 
 Intended to be published to the Chrome Web Store under the Maker404 brand
-(maker404.com — James's free K-6 educator resource site).
+(maker404.com — James's free K-6 educator resource site). NOT YET SUBMITTED.
 
 
-THE THREE FILES
----------------
-manifest.json   — MV3 Chrome extension manifest
-background.js   — Service worker: fetches STL files from Google Drive, bypassing CORS
-content.js      — Injected into Classroom/Drive pages: detects "No preview available",
-                  parses STL (binary + ASCII), runs floating geometry detection,
-                  renders with custom WebGL renderer (no dependencies)
+WHERE THINGS STAND
+------------------
+Repo:      https://github.com/GW228g/stl-viewer-extension (public, MIT)
+Version:   1.4.2 — latest GitHub release, zip attached (see RELEASING below)
+Branches:  main is the source of truth. All work happens on main.
+           feature/print-roster is a LOCAL-ONLY dev branch (never pushed): an opt-in
+           "Print checklist" button on a Classroom assignment's Student work page that
+           makes a one-page list of every student and their STL file, grouped by
+           colour, for print planning (a roster/ folder plus a settings popup).
+           Leave it alone unless James says otherwise. It predates 1.4.1/1.4.2, so
+           merge main INTO it first; manifest.json will conflict.
+Installed: James loads it unpacked (chrome://extensions → Developer mode → Load
+           unpacked). He reported that 1.4.1 "worked great" in his own install.
+           1.4.2 (floating-check change) has been tested in a harness but not yet in
+           his real install.
+
+
+FILES
+-----
+manifest.json          MV3 manifest (version lives here)
+background.js          Service worker. Fetches the STL for the content script
+                       (credentials: include, so it uses James's Google session and
+                       bypasses CORS), returns base64 + the file name taken from the
+                       Content-Disposition header.
+content.js             Everything else, in one IIFE (no modules, nothing exported):
+                       detection, STL parsing, geometry analysis, WebGL renderer, UI.
+icons/                 16/48/128 PNG (dark rounded square, blue isometric cube)
+README.md              User-facing docs, install steps, badges
+CHANGELOG.md           Every release, newest first. Keep it current.
+CHROMEWEBSTORE.md      Permission justifications + data-usage answers for the Store.
+                       Update in the same commit as ANY manifest permission change.
+LICENSE                MIT, "Maker404"
+docs/
+  chrome-web-store-listing.md   Copy-paste source for the Store forms (descriptions,
+                                single purpose, category, screenshots, package link)
+  privacy-policy.md             Ready to publish at maker404.com/stl-viewer-privacy
+  blog-post-draft.md            maker404.com announcement draft
+  screenshot.jpg                3DBenchy, exactly 1280x800 (README + Store)
+  screenshot-floating.jpg       Hovering-letters demo with the warning, 1280x800
+  demo-floating-keychain.stl    The exact demo model — upload it to Drive to see the
+                                warning live
+.gitignore             Ignores *.zip and .claude/launch.json (see GOTCHAS)
 
 
 HOW IT WORKS — STEP BY STEP
-----------------------------
-1. Content script runs on classroom.google.com, drive.google.com, docs.google.com
-2. MutationObserver + polling watches for "No preview available" text to appear
-3. When found, it also searches for the Google Drive download URL using 6 strategies:
-   - anchor with .stl in href
-   - anchor with export=download in href
-   - anchor whose text contains "download"
-   - Drive file ID extracted from iframe src
-   - Drive file ID extracted from page URL
-   - Drive file ID from data attributes
-4. Injects a "View in 3D" button below the "No preview available" box
-5. On click, sends the URL to the background service worker via chrome.runtime.sendMessage
-6. Background worker fetches the file (credentials: include, bypasses CORS), converts
-   ArrayBuffer to base64, returns it to content script
-7. Content script decodes base64 back to ArrayBuffer, parses as STL
-8. Runs floating geometry detection (union-find algorithm on mesh components)
-9. Opens full-screen WebGL viewer overlay with toolbar and 3D canvas
-
-The file never touches disk. It lives in RAM during parsing/rendering only.
-GPU buffers are released when the viewer closes.
-
-
-WEBGL RENDERER (content.js)
-----------------------------
-- Custom from scratch, zero external dependencies (no Three.js, no libraries)
-- Two GLSL shader programs: one for the model (lit), one for the grid (flat color)
-- Lighting: two directional lights, ambient base, normal-based diffuse shading
-- Matrix math: custom column-major m4 object (mul, perspective, translate, rotX, rotY, rotZ)
-- Controls: mouse drag to rotate, Shift+drag to pan, scroll to zoom
-- Grid floor: 20x20 GL_LINES at the bottom of the model's bounding box
-- Auto-orient: detects thinnest axis of bounding box and pre-rotates model to lie flat
-  (important because Tinkercad exports can be oriented differently per student)
-  rotX(-90°) when Z is thin, rotZ(+90°) when X is thin, no rotation when Y is thin
-- Grid uses a separate MVP matrix (no autoRot) so it doesn't get double-rotated
-- Model MVP: center → autoRot → user drag rotation
-- Grid MVP: user drag rotation only (grid geometry already in post-autoRot space)
+---------------------------
+1. content.js runs on classroom.google.com, drive.google.com, docs.google.com
+   (all_frames: true, because the file viewer can sit in an iframe).
+2. A MutationObserver plus a 30-second polling safety net (tryInject) watch for the
+   text "No preview available". The "injected" flag resets when the URL changes, so
+   moving between student submissions works without a page reload.
+3. findDownloadUrl() resolves the file, trying in order:
+     a. an anchor whose href contains ".stl"
+     b. an anchor with export=download or drive.google.com/uc
+     c. a Drive file ID from an iframe src
+     d. a Drive file ID from the page URL
+     e. a Drive file ID from data-id / data-fileid / data-docid attributes
+        (prefers an aria-selected element)
+     f. last resort: any anchor whose text contains "download", EXCLUDING Google's own
+        help/account hosts (NON_FILE_HOSTS). That exclusion fixed a real bug where a
+        support.google.com article was fetched instead of the file.
+   The URL is re-resolved on every click, not cached, so "Try Again" re-scans.
+4. A "View in 3D" button is appended below the "No preview available" box.
+5. Click → chrome.runtime.sendMessage({type:'FETCH_STL'}) → background.js fetches,
+   base64-encodes in 32 KB chunks (call-stack safety) and replies
+   {ok, b64, filename}. Errors: HTTP status, or "Got an HTML page" (not signed in).
+6. content.js decodes, parseSTL() → openViewer(stl, fileName).
+7. The viewer opens at once. The floating check runs ~50 ms later (setTimeout, not
+   requestAnimationFrame — rAF is paused in a hidden tab) and fills in a toolbar pill.
+The STL never touches disk. GPU buffers are released when the viewer closes (the render
+loop stops itself when the overlay leaves the DOM).
 
 
-STL PARSER (content.js)
-------------------------
-- Handles both binary STL and ASCII STL
-- Binary detection: checks exact byte length match (84 + nTri * 50)
-- ASCII detection: looks for "facet normal" keyword in decoded text
-- Binary fallback: accepts files >= expected size if ASCII check fails
-- Zero-normal fallback: if stored normals are all 0 0 0 (some CAD tools do this),
-  computes face normals from cross product of triangle edges instead
-- Applies to both parseBinary and parseASCII
+ORIENTATION  (determineUpAxis)
+------------------------------
+STL has no orientation metadata. Tinkercad — and 3D printing in general — is Z-up;
+the WebGL scene is Y-up. So Z is the default "up" axis (rotX(-90°) maps Z to Y).
+Exception: a flat plaque (a keychain) whose thickness was authored along another axis.
+That axis is treated as up only if it is at most half the next-smallest dimension.
+The same function picks the floor axis for the floating check.
+History worth knowing: the original heuristic ("thinnest axis is up") tipped tall
+models (lighthouses, 3DBenchy) onto their side. Thresholding it wasn't enough — models
+with no clearly thin axis still fell back to "Y is up", which was wrong. The fix was
+to default to Z-up. A model the student rotated on its side in Tinkercad shows as
+exported; that is deliberate (it's how it would print). Users can drag to rotate.
 
 
-FLOATING GEOMETRY DETECTION (content.js)
+FLOATING-GEOMETRY CHECK  (detectFloating)
 -----------------------------------------
-detectFloating(verts) — returns boolean
-
-Algorithm:
-1. Compute per-axis bounding box ranges (dx, dy, dz)
-2. Identify floor axis = thinnest dimension (matches auto-orient logic)
-3. Build union-find on triangles: connect any two triangles that share a vertex
-   (vertex positions hashed to grid cells at tolerance/2 resolution)
-4. For each connected component, find the minimum value along the floor axis
-5. If any component's floor-axis minimum is more than tol (1.5% of model size)
-   above the global floor minimum, return true (floating detected)
-6. Skip models > 200,000 triangles (performance safety valve)
-
-Result shown as "⚠️ Floating geometry detected" badge in the toolbar.
-Only appears when actually detected — no false positives on raised text or
-normal surface features.
-
-
-TOOLBAR (content.js — openViewer function)
--------------------------------------------
-Left to right:
-  🖨️  STL Preview  [N ▲ triangles]  [W × D × H mm]  [⚠️ floating badge if needed]
-  ............hint text............  [↺ Reset View]  [✕ Close]
-
-Dimensions shown as W × D × H in print orientation (H = thickness).
-Computed from bbox dx/dy/dz based on which auto-orient rotation was applied.
-Hovering over dimensions shows tooltip: "Width × Depth × Height (print orientation)"
-
-Reset View button restores initial rotX, rotY, zoom and zeroes pan.
+1. Union-find on triangles that share a vertex. Vertices are quantised to a grid of
+   tol/2 (tol = 1.5% of the model's largest dimension), so tiny gaps count as connected.
+2. Each connected piece gets a bounding box.
+3. A piece is SUPPORTED if its floor-axis minimum is within tol of the global minimum
+   (it reaches the bed), or if its bounding box overlaps (±tol) a supported piece.
+   Support spreads through chains of overlapping pieces (BFS).
+4. Any unsupported piece = floating.
+Why the overlap rule: separate shells that are embedded in the body (inlaid lettering,
+artwork layers, nested parts) never touch the bed but print fine. Before 1.4.2 they were
+all flagged — 6 of 41 real STLs, none visibly floating.
+Toolbar pill states: checking → clear (green) | floating (orange) | skipped | failed.
+"Skipped" = over MAX_FLOAT_CHECK_TRIS (1,000,000). Over MAX_PIECES_FOR_OVERLAP_TEST
+(5,000 pieces) the overlap test is skipped, falling back to "any piece off the bed".
+Speed: ~0.25 ms per 1,000 triangles (864,500 triangles ≈ 190 ms). The old 200,000 cap
+was needlessly cautious and silently skipped normal models like 3DBenchy.
+KNOWN LIMIT: bounding-box overlap can't see a part floating INSIDE a hollow body, or
+in the empty corner of an L-shaped one. Accepted trade-off.
 
 
-KEY BUGS FIXED DURING DEVELOPMENT (in order)
-----------------------------------------------
-1. CORS: content script fetch blocked cross-origin — moved fetch to background
-   service worker which bypasses CORS with host_permissions
-2. TDZ error: "Cannot access 'gl' before initialization" — changed const gl to
-   let gl = null declared before the resize callback
-3. Blank canvas: canvas.width/height were 0 because resize() was called before
-   the overlay was in the DOM — moved resize() call to after WebGL init
-4. Grid cutting through model: autoRot was being applied twice to grid geometry
-   (once baked in, once via shared model matrix) — gave grid its own MVP matrix
-5. Model standing on edge: auto-orient now detects thin axis and pre-rotates
-6. Window listener leak: mouseup/mousemove on window were never removed — now
-   stored as named functions and removed in closeBtn.onclick
+VOLUME AND WEIGHT
+-----------------
+meshVolume(): signed tetrahedron sums (independent of winding and of where the model
+sits). meshSurfaceArea(): half the cross-product magnitudes.
+estimateGrams = ( shell + (volume − shell) × infill ) × density, where
+shell = min(volume, surfaceArea × SHELL_MM) and SHELL_MM = 1.2 (≈3 walls + top/bottom).
+A plain volume × infill% would badly under-weigh thin parts like keychains, which are
+almost all shell — so those barely change with infill, as in a slicer.
+MATERIALS = { PLA: 1.24, PETG: 1.27 } g/cm³; adding one is a one-line change.
+Infill 10–100% in steps of 10, default 20%. The last material/infill choice is kept in
+module variables for the page session only — NO storage permission on purpose.
+Assumes millimetre units and a watertight mesh. Weight is hidden when the volume is
+~0 (an open surface, or a file exported in metres). It's a rough guide; detailed meshes
+inflate surface area, which biases the estimate high.
 
 
-MANIFEST PERMISSIONS
----------------------
-host_permissions:
-  https://classroom.google.com/*
-  https://drive.google.com/*
-  https://docs.google.com/*
-  https://*.google.com/*
-  https://*.googleapis.com/*
-  https://*.googleusercontent.com/*
+VIEWER / TOOLBAR
+----------------
+Custom WebGL, no dependencies: lit model shader + flat grid shader, two directional
+lights, column-major m4 matrix object. Drag = rotate, Shift+drag = pan, scroll = zoom,
+Reset View. The grid is drawn at the model's floor; the model MVP is centre → autoRot →
+user rotation, the grid MVP is user rotation only (otherwise autoRot is applied twice).
+Toolbar, left to right: printer icon · "STL Preview" · triangle count · W×D×H mm (print
+orientation) · volume · weight · material · infill · floating pill · hint · Reset ·
+Save PNG · Close.
+Layout: min-height 52 px, flex-wrap. The hint has zero flex-basis and shrinks away first;
+then the three buttons wrap together to a second row. Checked 600–1366 px: nothing is
+ever pushed off-screen. (Earlier the bar needed ~1100 px and clipped Close.)
+Toolbar text colours: the hint was once #2d3154 on #0a0b10 — unreadable. Keep it at
+#8892c8.
 
-content_scripts matches:
-  https://classroom.google.com/*
-  https://drive.google.com/*
-  https://docs.google.com/*
 
-all_frames: true (needed because the file viewer can be in an iframe)
+SAVE PNG
+--------
+Composites a 52 px header (title, triangles, dimensions, volume/weight "of PETG at 20%
+infill", floating pill in whatever state it's in) above the canvas
+(preserveDrawingBuffer: true). Downloads as "<student file name>-screenshot.png".
+Name source: Content-Disposition (filenameFromDisposition prefers RFC 5987 filename*,
+falls back to the plain form if the escape is malformed) → an .stl link → ".stl" text
+on the page → "stl-preview-screenshot.png". Illegal characters and path parts are
+stripped. The page-text fallback is a guess and can pick up neighbouring label text;
+it only runs when Drive sends no header (unverified against real Drive headers).
+
+
+STL PARSER
+----------
+Binary vs ASCII is decided by exact byte length (84 + nTri × 50), else a "facet normal"
+keyword; a binary fallback accepts files at least the expected size. If stored normals
+are all zero (some CAD tools), face normals are computed from edge cross products.
+
+
+PERMISSIONS  (see CHROMEWEBSTORE.md for the justifications)
+-----------
+No "permissions" array at all. host_permissions:
+  classroom.google.com, drive.google.com, drive.usercontent.google.com,
+  docs.google.com, *.googleusercontent.com
+Content-script matches: classroom, drive, docs only.
+History: it used to include *.google.com and *.googleapis.com — unused and the sort of
+thing Store review flags. Removing them broke downloads ("Failed to fetch") because
+Drive redirects uc?export=download to drive.usercontent.google.com, which is NOT covered
+by *.googleusercontent.com (different domain). That one was added back by name.
+
+
+RELEASING
+---------
+1. Edit on main (never on feature/print-roster). Bump "version" in manifest.json.
+2. CHANGELOG.md: new entry on top.
+3. README.md version badge (it was left stale at 1.2.0 for a long time — easy to miss).
+4. docs/chrome-web-store-listing.md: "Current for vX" and the release link.
+5. node --check content.js; node --check background.js (it checks one file per run);
+   python3 -m json.tool manifest.json.
+6. Commit, push to main.
+7. Zip a folder "stl-viewer-extension/" containing ONLY manifest.json, content.js,
+   background.js and icons/ (no docs, no .git). Check it byte-for-byte against git
+   (git hash-object vs git rev-parse HEAD:path).
+8. gh release create vX stl-viewer-extension.zip --latest --notes "…"
+   James asks for releases explicitly — don't publish one unprompted.
+Versioning: new user-visible feature = minor; bug fix only = patch.
+Releases so far: 1.2.0 · 1.2.1 · 1.3.0 · 1.4.0 · 1.4.1 · 1.4.2.
+  1.2.0 floating detection, dimensions, reset view, Save PNG
+  1.2.1 Z-up fix, drive.usercontent permission, download-URL bug, contrast, icons
+  1.3.0 volume + estimated weight + infill selector (PLA)
+  1.4.0 PETG, floating-status pill, 1M-triangle limit, toolbar wrap
+  1.4.1 Save PNG named after the student's file
+  1.4.2 floating check ignores embedded pieces
+
+
+TESTING
+-------
+There is no test framework in the repo. What has worked (the harness lives outside the
+repo; recreate it as needed):
+  - Node: pull a function out of content.js by brace-matching its source text and run it
+    on real STLs (volume, orientation, floating). Compare old vs new behaviour on every
+    STL in ~/Downloads. content.js is an IIFE, so there is nothing to require().
+  - Real viewer: serve a page over HTTP that contains the text "No preview available",
+    a hidden <a href="https://drive.google.com/uc?export=download&id=AAAA…">, a stub
+    window.chrome.runtime.sendMessage returning {ok:true, b64, filename}, and
+    <script src="content.js">. Drive it with headless Chrome over the DevTools protocol
+    (/Applications/Google Chrome.app, --headless=new --use-angle=swiftshader
+    --enable-unsafe-swiftshader, Emulation.setDeviceMetricsOverride for an exact size).
+    Click the button, find the toolbar (the div with style.minHeight === '52px'), read
+    its spans, click Save PNG and read the intercepted anchor's download name.
+  - The same setup produces the 1280x800 Store screenshots.
+Never claim a UI change works from "node --check" alone.
+
+
+GOTCHAS
+-------
+- chrome:// pages can't be automated. After a code change James must click reload on the
+  extension card at chrome://extensions, THEN reload the Drive/Classroom tab (content
+  scripts only inject on page load).
+- Chrome Sync doesn't sync unpacked extensions; each computer needs a manual install.
+- The built-in browser pane shows file:// pages as static snapshots — serve over HTTP.
+- macOS: sed needs -i '' ; there is no `timeout` command; screenshot file names contain
+  a narrow no-break space (U+202F) before AM/PM, so quoted paths fail — use a glob.
+- Don't run two Claude sessions in the same folder. A test server's .claude/launch.json
+  once got committed onto the dev branch by the other session. It's gitignored on main
+  now; use a separate git worktree for a second line of work.
+- Verify before asserting: several "obvious" causes here turned out wrong (the
+  "Failed to fetch" was a missing host permission; the console errors on Drive were
+  another extension's). Look at the actual error and the actual file.
 
 
 KNOWN LIMITATIONS
 -----------------
-- Only works as a developer/unpacked extension right now (not on Chrome Web Store yet)
-- Chrome Sync does not sync unpacked extensions — must be manually installed per computer
-- Floating detection skips models > 200,000 triangles
-- No touch/stylus support for rotation (only mouse)
-- If a student's Google account doesn't grant access to the Drive file, fetch fails
-  gracefully with an error message
+- Only works as an unpacked developer extension for now.
+- Mouse only; no touch or stylus rotation.
+- Floating check: bounding-box overlap limit above; skipped over 1M triangles.
+- Weight: PLA/PETG only, a rough guide, assumes mm units and a watertight mesh.
+- Orientation assumes Tinkercad's Z-up; a model exported on its side shows that way.
+- If the student's Google account can't read the Drive file, the fetch fails with a
+  message in the button's status line.
 
 
-WHAT'S NEEDED FOR CHROME WEB STORE SUBMISSION
------------------------------------------------
-- Icon set: 16x16, 48x48, 128x128 PNG
-- Store promo graphic: 1280x800
-- Privacy policy page (suggested host: maker404.com/stl-viewer-privacy)
-  Key language: "The extension fetches STL files transiently into browser memory
-  for 3D rendering. No data is stored, logged, or transmitted to any server.
-  Files are never written to disk."
-- Update manifest: add "icons" field pointing to the icon files
-- Rebrand: name, description, and icon should reflect Maker404
-
-
-CURRENT VERSION
----------------
-v1.2.0
+OPEN ITEMS
+----------
+Chrome Web Store (everything below is drafted; nothing submitted):
+  - Pay the $5 developer registration, verify identity.
+  - Publish docs/privacy-policy.md at maker404.com/stl-viewer-privacy.
+  - Fill the Privacy practices tab from CHROMEWEBSTORE.md; copy text from
+    docs/chrome-web-store-listing.md; upload the zip and both screenshots
+    (Benchy first). Expect closer review than usual because of the Google host
+    permissions.
+  - Decide whether to rebrand the manifest name/description to Maker404.
+Docs to tidy:
+  - README's Auto-orient bullet still says "rotates it flat" — it now stands the model
+    up per Tinkercad's Z-up convention.
+  - Privacy policy and README say nothing is written to disk. True for the STL; Save
+    PNG writes an image when the user clicks it. One clarifying sentence would be more
+    accurate (matters for Store review).
+Ideas on the README roadmap: touch/stylus support, configurable printer bed size for the
+dimension check, colour-coding by Z layer for wall thickness.
