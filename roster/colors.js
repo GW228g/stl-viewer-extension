@@ -1,0 +1,136 @@
+// Guess a filament color from a student's file name, and group a class roster by it.
+// Pure logic with no DOM or extension APIs, so it runs in the browser and in Node tests.
+(function (root) {
+  // Display order of the groups on the printed sheet.
+  const COLORS = [
+    'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown',
+    'black', 'white', 'gray', 'gold', 'silver', 'teal', 'multicolor', 'clear',
+  ];
+
+  const SYNONYMS = {
+    red:        ['red', 'crimson', 'scarlet', 'maroon'],
+    orange:     ['orange'],
+    yellow:     ['yellow'],
+    green:      ['green', 'lime'],
+    blue:       ['blue', 'navy'],
+    purple:     ['purple', 'violet', 'lavender', 'lilac'],
+    pink:       ['pink', 'magenta'],
+    brown:      ['brown'],
+    black:      ['black'],
+    white:      ['white'],
+    gray:       ['gray', 'grey'],
+    gold:       ['gold'],
+    silver:     ['silver'],
+    teal:       ['teal', 'turquoise', 'aqua', 'cyan'],
+    multicolor: ['rainbow', 'multicolor', 'multicolour', 'multi'],
+    clear:      ['clear', 'transparent'],
+  };
+
+  // Ordinary words that sit one typo away from a color and show up in 3D-print names.
+  // They are never fuzzy-matched (an exact color word still wins).
+  const NOT_COLORS = new Set([
+    'block', 'blank', 'blur', 'glue', 'crown', 'drown', 'grown', 'brown',
+    'fellow', 'mellow', 'sliver', 'server', 'write', 'while', 'whole',
+    'greek', 'greet', 'greed', 'bold', 'told', 'hold', 'mold', 'gild',
+    'team', 'tell', 'deal', 'seal', 'tail', 'real', 'pine', 'ping', 'pint',
+    'link', 'mink', 'arrange', 'hundred',
+  ]);
+
+  const WORD_TO_COLOR = {};
+  for (const color of COLORS) for (const w of SYNONYMS[color]) WORD_TO_COLOR[w] = color;
+  const COLOR_WORDS = Object.keys(WORD_TO_COLOR);
+
+  // Edit distance counting a swapped pair of letters ("bleu" vs "blue") as one typo.
+  function distance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) { d[i] = [i]; }
+    for (let j = 0; j <= b.length; j++) { d[0][j] = j; }
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // "RedDragon_v2.stl" -> ["red", "dragon", "v"]
+  function tokenize(fileName) {
+    return String(fileName || '')
+      .replace(/\.stl$/i, '')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter(Boolean);
+  }
+
+  // Returns { color, certain, word } or { color: null }.
+  // certain=false means a guess (typo or color glued to another word) the teacher should glance at.
+  function detectColor(fileName) {
+    const words = tokenize(fileName);
+
+    for (const w of words) {
+      if (WORD_TO_COLOR[w]) return { color: WORD_TO_COLOR[w], certain: true, word: w };
+    }
+
+    // Color glued to another word: "reddragon", "froggreen".
+    for (const w of words) {
+      if (w.length < 6) continue;
+      for (const cw of COLOR_WORDS) {
+        if (w.length - cw.length >= 3 && (w.startsWith(cw) || w.endsWith(cw))) {
+          return { color: WORD_TO_COLOR[cw], certain: false, word: w };
+        }
+      }
+    }
+
+    // Misspelling: same first letter and one typo (two for long words).
+    let best = null;
+    for (const w of words) {
+      if (w.length < 4 || NOT_COLORS.has(w)) continue;
+      const limit = w.length >= 7 ? 2 : 1;
+      for (const cw of COLOR_WORDS) {
+        if (cw.length < 4 || cw[0] !== w[0]) continue;
+        const dist = distance(w, cw);
+        if (dist <= limit && (!best || dist < best.dist)) {
+          best = { color: WORD_TO_COLOR[cw], certain: false, word: w, dist };
+        }
+      }
+    }
+    return best ? { color: best.color, certain: false, word: best.word } : { color: null };
+  }
+
+  // students: [{ name, files: ["a.stl", ...] }]
+  // overrides: { "<name>|<file>": "red" | "unsorted" } set by the teacher in the preview.
+  function groupByColor(students, overrides) {
+    overrides = overrides || {};
+    const byColor = {};
+    const notSubmitted = [];
+
+    for (const s of students) {
+      if (!s.files || !s.files.length) { notSubmitted.push(s.name); continue; }
+      for (const file of s.files) {
+        const guess = detectColor(file);
+        const forced = overrides[s.name + '|' + file];
+        const color = forced || guess.color || 'unsorted';
+        const uncertain = !forced && color !== 'unsorted' && !guess.certain;
+        (byColor[color] = byColor[color] || []).push({ name: s.name, file, uncertain });
+      }
+    }
+
+    const groups = [];
+    for (const color of COLORS.concat('unsorted')) {
+      if (!byColor[color]) continue;
+      byColor[color].sort((a, b) => a.name.localeCompare(b.name));
+      groups.push({ color, items: byColor[color] });
+    }
+    notSubmitted.sort((a, b) => a.localeCompare(b));
+    return { groups, notSubmitted };
+  }
+
+  const api = { COLORS, detectColor, groupByColor, tokenize };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.RosterColors = api;
+})(typeof self !== 'undefined' ? self : this);
