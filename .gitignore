@@ -15,3 +15,6 @@ Thumbs.db
 # Node (in case tooling is added later)
 node_modules/
 npm-debug.log*
+
+# Local preview-server config for the Claude desktop app (points at paths on one machine)
+.claude/launch.json
