@@ -1,7 +1,7 @@
 // Invented class for developing the print sheet. No real student data.
 window.ROSTER_DATA = {
-  course: 'Mock 3D Design - Period 3',
-  assignment: 'Keychain Print',
+  title: 'Keychain Print - Mock 3D Design Period 3',
+  warnings: [],
   students: [
     { name: 'Avery Adams',     files: ['red_dragon.stl'] },
     { name: 'Blake Baker',     files: ['Bleu Vase.stl'] },
@@ -18,10 +18,10 @@ window.ROSTER_DATA = {
     { name: 'Morgan Moore',    files: ['block tower.stl'] },
     { name: 'Noor Nguyen',     files: ['Rainbow Snake.stl'] },
     { name: 'Oakley Ortiz',    files: ['pruple_whale.stl'] },
-    { name: 'Parker Patel',    files: [] },
+    { name: 'Parker Patel',    files: [], others: [{ name: 'Funky Jaagub', isLink: true }] },
     { name: 'Quinn Quinn',     files: ['GOLD_trophy.stl'] },
     { name: 'Reese Reyes',     files: ['wite_ghost.stl'] },
-    { name: 'Sage Singh',      files: ['team logo.stl'] },
+    { name: 'Sage Singh',      files: ['team logo.stl'], status: 'Assigned' },
     { name: 'Tatum Taylor',    files: [] },
     { name: 'Uma Underwood',   files: ['d1p2 john fitz kennedy project #3 Orange.stl'] },
     { name: 'Val Vasquez',     files: ['period 3 keychain assignment final version my cool dragon head Green.stl'] },

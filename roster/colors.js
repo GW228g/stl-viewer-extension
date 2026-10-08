@@ -116,35 +116,63 @@
     return best ? { color: best.color, certain: false, word: best.word } : { color: null };
   }
 
-  // students: [{ name, files: ["a.stl", ...] }]
-  // overrides: { "<name>|<file>": "red" | "unsorted" } set by the teacher in the preview.
-  function groupByColor(students, overrides) {
+  // Sort key for "First Last" or "Last, First" names.
+  function nameKey(name, mode) {
+    const n = String(name || '').trim();
+    let first, last;
+    if (n.includes(',')) {
+      [last, first] = n.split(',').map(x => x.trim());
+    } else {
+      const parts = n.split(/\s+/);
+      last = parts.pop() || '';
+      first = parts.join(' ');
+    }
+    return (mode === 'first' ? first + ' ' + last : last + ' ' + first).toLowerCase();
+  }
+
+  const DONE_STATUS = /^(turned in|handed in|done|done late|returned|graded|resubmitted)$/i;
+
+  // students: [{ id?, name, status?, files: ["a.stl"], others?: [{ name, isLink }] }]
+  // overrides: { "<id or name>|<file>": "red" | "unsorted" } set by the teacher in the preview.
+  // opts.sort: "last" (default) or "first".
+  function groupByColor(students, overrides, opts) {
     overrides = overrides || {};
+    const mode = (opts && opts.sort) || 'last';
+    const cmp = (a, b) => nameKey(a.name, mode).localeCompare(nameKey(b.name, mode));
     const byColor = {};
     const notSubmitted = [];
+    const others = [];
 
     for (const s of students) {
-      if (!s.files || !s.files.length) { notSubmitted.push(s.name); continue; }
-      for (const file of s.files) {
+      const files = s.files || [];
+      const extra = s.others || [];
+      if (!files.length && !extra.length) { notSubmitted.push(s); continue; }
+      for (const o of extra) others.push({ name: s.name, title: o.name, isLink: o.isLink });
+      for (const file of files) {
+        const key = (s.id || s.name) + '|' + file;
         const guess = detectColor(file);
-        const forced = overrides[s.name + '|' + file];
+        const forced = overrides[key];
         const color = forced || guess.color || 'unsorted';
         const uncertain = !forced && color !== 'unsorted' && !guess.certain;
-        (byColor[color] = byColor[color] || []).push({ name: s.name, file, uncertain });
+        const pending = !!s.status && !DONE_STATUS.test(s.status);
+        (byColor[color] = byColor[color] || []).push({ key, name: s.name, file, uncertain, pending });
       }
     }
 
     const groups = [];
     for (const color of COLORS.concat('unsorted')) {
       if (!byColor[color]) continue;
-      byColor[color].sort((a, b) => a.name.localeCompare(b.name));
+      byColor[color].sort(cmp);
       groups.push({ color, items: byColor[color] });
     }
-    notSubmitted.sort((a, b) => a.localeCompare(b));
-    return { groups, notSubmitted };
+    return {
+      groups,
+      notSubmitted: notSubmitted.sort(cmp).map(s => s.name),
+      others: others.sort(cmp),
+    };
   }
 
-  const api = { COLORS, detectColor, groupByColor, tokenize };
+  const api = { COLORS, detectColor, groupByColor, nameKey, tokenize };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RosterColors = api;
 })(typeof self !== 'undefined' ? self : this);

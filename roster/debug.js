@@ -10,7 +10,7 @@
     btn.type = 'button';
     btn.setAttribute('data-roster-ignore', '');
     btn.textContent = 'Copy page structure';
-    btn.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483646;padding:5px 10px;' +
+    btn.style.cssText = 'position:fixed;left:12px;bottom:10px;z-index:2147483646;padding:3px 9px;' +
       'font:12px system-ui,sans-serif;border:1px solid #888;border-radius:14px;background:#fff;' +
       'color:#333;cursor:pointer;opacity:.6';
     btn.addEventListener('mouseenter', () => { btn.style.opacity = '1'; });
