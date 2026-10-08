@@ -72,8 +72,22 @@
   function detectColor(fileName) {
     const words = tokenize(fileName);
 
-    for (const w of words) {
-      if (WORD_TO_COLOR[w]) return { color: WORD_TO_COLOR[w], certain: true, word: w };
+    // Exact color word. Students often put the color first or last ("red dragon",
+    // "d1p2 john fitz project #3 Orange"); one buried in the middle of a long name could be
+    // part of a name or title ("john brown project"), and two different colors are ambiguous.
+    // Either case still picks the last color word but is marked as a guess.
+    const named = words.filter(w => w.length >= 2);   // stray letters from "d1p2", "v2"
+    let first = -1, last = -1;
+    const found = new Set();
+    named.forEach((w, i) => {
+      if (!WORD_TO_COLOR[w]) return;
+      found.add(WORD_TO_COLOR[w]);
+      if (first < 0) first = i;
+      last = i;
+    });
+    if (last >= 0) {
+      const atEdge = first === 0 || last === named.length - 1;
+      return { color: WORD_TO_COLOR[named[last]], certain: found.size === 1 && atEdge, word: named[last] };
     }
 
     // Color glued to another word: "reddragon", "froggreen".

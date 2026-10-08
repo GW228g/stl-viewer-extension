@@ -8,7 +8,11 @@ const cases = [
   ['Red Dragon.STL',        'red',    true],
   ['PurpleRobot.stl',       'purple', true],
   ['grey_tank.stl',         'gray',   true],
-  ['black and white panda.stl', 'black', true],
+  ['black and white panda.stl', 'white', false],   // two colors: last wins, flagged
+  ['d1p2 john fitz kennedy project #3 Orange.stl', 'orange', true],
+  ['Mighty Sango Red Dragon.stl', 'red', false],    // buried mid-name: flagged
+  ['john brown project.stl', 'brown', false],       // surname: flagged
+  ['Brown Bear v2.stl',     'brown',  true],
   ['Bleu Vase.stl',         'blue',   false],
   ['gren frog.stl',         'green',  false],
   ['yelow duck.stl',        'yellow', false],

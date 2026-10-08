@@ -23,5 +23,7 @@ window.ROSTER_DATA = {
     { name: 'Reese Reyes',     files: ['wite_ghost.stl'] },
     { name: 'Sage Singh',      files: ['team logo.stl'] },
     { name: 'Tatum Taylor',    files: [] },
+    { name: 'Uma Underwood',   files: ['d1p2 john fitz kennedy project #3 Orange.stl'] },
+    { name: 'Val Vasquez',     files: ['period 3 keychain assignment final version my cool dragon head Green.stl'] },
   ],
 };

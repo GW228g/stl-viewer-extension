@@ -24,7 +24,7 @@ h1 { font-size: 15px; margin: 0 0 2px; }
 .group h2 span { font-weight: 400; color: #555; }
 .row { display: flex; gap: 6px; align-items: baseline; padding: 1px 0; break-inside: avoid; }
 .box { flex: none; width: 10px; height: 10px; border: 1px solid #333; transform: translateY(1px); }
-.who { font-weight: 600; }
+.who { font-weight: 600; flex: none; white-space: nowrap; }
 .file { color: #333; overflow-wrap: anywhere; }
 .guess { font-weight: 700; color: #b06000; }
 .row select { margin-left: auto; font-size: 11px; }
