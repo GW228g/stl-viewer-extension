@@ -4,6 +4,18 @@ Copy-paste source for the Developer Dashboard forms. Character counts are
 called out where the Store enforces a limit — verify against the live form,
 since Store limits/fields do drift over time.
 
+**Current for v1.4.1** (2026-10-08). Update the feature list below whenever a
+release adds or changes a user-visible feature.
+
+---
+
+## Package to upload
+
+`stl-viewer-extension.zip` from the
+[v1.4.1 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.4.1)
+(manifest, `content.js`, `background.js`, `icons/`). The manifest version
+must be higher than whatever was last uploaded to the Store.
+
 ---
 
 ## Short description (132 characters max)
@@ -11,7 +23,7 @@ since Store limits/fields do drift over time.
 ```
 Preview student STL files in Google Classroom instantly — no downloads, no Tinkercad, no slicer needed.
 ```
-*(106 characters)*
+*(103 characters)*
 
 ---
 
@@ -42,10 +54,13 @@ FEATURES
   you know at a glance whether it fits your printer's bed
 • Volume and estimated weight — cm³ and approximate grams of PLA or PETG at
   an infill you choose (10%–100%), to help budget filament for a class set
-• Auto-orient — detects how the model was exported and lays it flat
-  automatically, regardless of how a student's Tinkercad export came out
-• Save PNG — export the current view (with dimensions and warnings) as an
-  image, named after the student's file, to send back as feedback
+• Auto-orient — sets each model on the grid the way it would sit on your
+  print bed, using Tinkercad's own orientation: a lighthouse stands up and
+  a flat keychain lies flat
+• Save PNG — export the current view as an image, with the dimensions,
+  weight estimate and floating-geometry result in the header, named after
+  the student's file (e.g. "Cool Boat-screenshot.png") to send back as
+  feedback
 • Nothing stored, nothing tracked — the file is loaded into memory only to
   render it, and is discarded the moment you close the viewer. No accounts,
   no analytics, no ads, no data ever leaves your browser.
@@ -100,7 +115,10 @@ practices tab.
 
 ## Screenshots
 
-- [docs/screenshot.jpg](screenshot.jpg) — already sized to 1280×800, ready to
-  upload as-is. Shows the viewer's toolbar, grid floor, and a rendered model.
-- Consider a second screenshot showing the floating-geometry warning badge,
-  since that's a standout feature reviewers/teachers will want to see.
+- [docs/screenshot.jpg](screenshot.jpg) — 3DBenchy at exactly 1280×800, ready
+  to upload as-is. Shows the grid floor, dimensions, volume and weight with
+  the PLA/PETG and infill selectors, and the green "No floating geometry"
+  pill.
+- The Store allows several screenshots. A second one showing the orange
+  "Floating geometry detected" warning on a model that actually has a
+  disconnected part would show the feature that matters most to teachers.
