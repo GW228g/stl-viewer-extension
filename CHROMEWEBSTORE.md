@@ -77,7 +77,10 @@ run on those domains directly; it only needs the background worker to be
 (the STL being previewed) transiently, in the browser's memory, purely to
 render it. It is never stored, logged, or transmitted anywhere — not to
 Maker404, not to any third party. There is no backend server for this
-extension at all. See the full [privacy policy](docs/privacy-policy.md).
+extension at all. The only thing it can write is a PNG of the current view,
+created on the user's device and downloaded by the browser when the user
+clicks Save PNG; it is never sent anywhere. See the full
+[privacy policy](docs/privacy-policy.md).
 
 **Certification:** this extension does not sell or transfer user data to
 third parties, and does not use or transfer data for purposes unrelated to

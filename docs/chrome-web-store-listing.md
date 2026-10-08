@@ -62,8 +62,9 @@ FEATURES
   the student's file (e.g. "Cool Boat-screenshot.png") to send back as
   feedback
 • Nothing stored, nothing tracked — the file is loaded into memory only to
-  render it, and is discarded the moment you close the viewer. No accounts,
-  no analytics, no ads, no data ever leaves your browser.
+  render it, and is discarded the moment you close the viewer (the only
+  thing ever saved is a PNG you choose to export). No accounts, no
+  analytics, no ads, no data ever leaves your browser.
 
 WHO IT'S FOR
 

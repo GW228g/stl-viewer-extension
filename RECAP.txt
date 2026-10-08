@@ -271,11 +271,5 @@ Chrome Web Store (everything below is drafted; nothing submitted):
     (Benchy first). Expect closer review than usual because of the Google host
     permissions.
   - Decide whether to rebrand the manifest name/description to Maker404.
-Docs to tidy:
-  - README's Auto-orient bullet still says "rotates it flat" — it now stands the model
-    up per Tinkercad's Z-up convention.
-  - Privacy policy and README say nothing is written to disk. True for the STL; Save
-    PNG writes an image when the user clicks it. One clarifying sentence would be more
-    accurate (matters for Store review).
 Ideas on the README roadmap: touch/stylus support, configurable printer bed size for the
 dimension check, colour-coding by Z layer for wall thickness.

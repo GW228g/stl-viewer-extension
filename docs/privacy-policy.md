@@ -26,8 +26,8 @@ When you click **View in 3D** on a submitted STL file:
 2. The file is decoded and rendered entirely inside your browser's memory,
    using your computer's own graphics hardware (WebGL).
 3. When you close the 3D viewer, the file data and the rendered graphics
-   buffers are released. Nothing is written to disk, cached, or retained
-   after that point.
+   buffers are released. The STL itself is never written to disk, cached, or
+   retained after that point.
 
 To do this, the extension requests permission to run on Google Classroom,
 Google Drive, and Google Docs pages. These permissions are used exclusively
@@ -36,6 +36,12 @@ page, and (b) fetch that one file's bytes. The extension does not read,
 collect, or transmit any other content from these pages — grades, student
 names, comments, or any other Classroom or Drive data are never accessed or
 sent anywhere.
+
+The one thing the extension can save is an image you ask for. If you click
+**Save PNG**, it draws the current view (with the toolbar details such as
+dimensions and weight estimate) into an image on your own computer, and your
+browser downloads it like any other file. That only happens when you click,
+and the image is never sent anywhere.
 
 ## What the extension does not do
 
