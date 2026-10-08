@@ -1,0 +1,1 @@
+{ "version": "0.0.1", "configurations": [ { "name": "harness", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8765", "--directory", "/private/tmp/claude-502/-Users-jamescrawford-Documents-GitHub-stl-viewer-extension/c618b865-c0c2-4266-9d98-95b4b3355d7c/scratchpad"], "port": 8765 } ] }
