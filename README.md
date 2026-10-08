@@ -21,10 +21,10 @@ When a student submits an STL file and Google Classroom shows "No preview availa
 - **Floating geometry detection** — runs as soon as the viewer opens and shows its status in the toolbar: ⏳ checking, then ✓ clear or a ⚠️ warning when a part hangs in the air without touching or overlapping the rest of the model. Lettering or artwork inlaid in a plate, and parts nested inside a body, are not flagged (models up to 1,000,000 triangles)
 - **Model dimensions** — shows W × D × H in mm in print orientation so you can check if it fits your printer
 - **Volume and estimated weight** — shows cm³ and approximate grams of PLA or PETG at a selectable infill (10%–100%) to help budget filament
-- **Auto-orient** — detects which way the model was exported and rotates it flat automatically
+- **Auto-orient** — sets each model on the grid the way it would sit on your print bed, following Tinkercad's own orientation: a standing model stands up, and a flat keychain lies flat
 - **Reset View button** — one click to get back to the default angle
 - **Save PNG** — exports the current view with its toolbar details (dimensions, weight, floating-check result) as an image to send back to a student as feedback. The file is named after the student's file, e.g. `Cool Boat-screenshot.png`
-- **Nothing stored** — the file loads into memory for rendering only, never touches disk
+- **Nothing stored** — the STL loads into memory for rendering only and is never written to disk. The only thing that can be saved is the PNG you choose to export with Save PNG
 
 ---
 
@@ -100,7 +100,7 @@ Because this is an unpacked extension, Chrome Sync will not push updates to your
 
 This extension does not collect, store, or transmit any data.
 
-When you click View in 3D, the STL file is fetched from Google Drive into browser memory using your existing Google session. It is parsed and rendered on your GPU, then released when you close the viewer. Nothing is written to disk. No analytics, no tracking, no external servers.
+When you click View in 3D, the STL file is fetched from Google Drive into browser memory using your existing Google session. It is parsed and rendered on your GPU, then released when you close the viewer. The STL itself is never written to disk. The only file the extension ever creates is the PNG image you choose to save with Save PNG, which your browser downloads like any other file and which is never sent anywhere. No analytics, no tracking, no external servers.
 
 ---
 
