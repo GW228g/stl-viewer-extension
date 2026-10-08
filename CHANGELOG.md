@@ -4,6 +4,25 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.4.2] — 2026-10-08
+
+### Fixed
+- **Floating-geometry check no longer flags pieces that are embedded in the
+  model.** It used to warn about any separate piece that didn't reach the print
+  bed, so lettering or artwork inlaid in a plate, and parts nested inside a
+  body, were reported as floating even though they print fine. Of 41 real STL
+  files, 6 were flagged; in the 4 inspected piece by piece, every flagged piece
+  sat inside the main body's footprint rather than hanging in the air. None of
+  the 41 are flagged now. A piece is now floating only if it neither reaches
+  the bed nor overlaps (by bounding box, with the same tolerance) a piece that
+  is supported, directly or through a chain of overlapping pieces. A letter hovering above a
+  plate is still flagged. The warning's tooltip is reworded to match
+- Known limit: because the overlap test uses bounding boxes, a part floating
+  inside a hollow body, or in the empty corner of an L-shaped one, is not
+  caught. Check speed is unchanged (about 190 ms for 864,500 triangles)
+
+---
+
 ## [1.4.1] — 2026-10-08
 
 ### Changed

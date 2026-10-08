@@ -4,7 +4,7 @@ Copy-paste source for the Developer Dashboard forms. Character counts are
 called out where the Store enforces a limit — verify against the live form,
 since Store limits/fields do drift over time.
 
-**Current for v1.4.1** (2026-10-08). Update the feature list below whenever a
+**Current for v1.4.2** (2026-10-08). Update the feature list below whenever a
 release adds or changes a user-visible feature.
 
 ---
@@ -12,7 +12,7 @@ release adds or changes a user-visible feature.
 ## Package to upload
 
 `stl-viewer-extension.zip` from the
-[v1.4.1 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.4.1)
+[v1.4.2 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.4.2)
 (manifest, `content.js`, `background.js`, `icons/`). The manifest version
 must be higher than whatever was last uploaded to the Store.
 
@@ -47,9 +47,9 @@ FEATURES
 • Grid floor — instantly see if any part of a model is floating above the
   print bed instead of touching it
 • Floating geometry detection — runs the moment the viewer opens and shows
-  its status in the toolbar (checking, all clear, or a warning when
-  disconnected mesh pieces are found), so you can catch print failures
-  before they happen
+  its status in the toolbar (checking, all clear, or a warning when a part
+  hangs in the air instead of touching the print bed), so you can catch
+  print failures before they happen
 • Model dimensions — width × depth × height in mm, in print orientation, so
   you know at a glance whether it fits your printer's bed
 • Volume and estimated weight — cm³ and approximate grams of PLA or PETG at

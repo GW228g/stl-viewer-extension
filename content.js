@@ -285,9 +285,17 @@
   // of a second, and bounds the memory the vertex map can use.
   const MAX_FLOAT_CHECK_TRIS = 1000000;
 
-  /* Detects whether any disconnected mesh component fails to touch the print floor.
-     Uses union-find on triangles connected by shared vertex positions, then checks
-     which components have no vertex within tolerance of the global floor-axis minimum.
+  // The overlap test compares pieces pairwise, so it's skipped (falling back to
+  // "any piece off the bed is floating") for a mesh shattered into thousands of
+  // shells, to keep the worst case bounded.
+  const MAX_PIECES_FOR_OVERLAP_TEST = 5000;
+
+  /* Detects parts of the model that hang in the air. Uses union-find on triangles
+     connected by shared vertex positions to split the mesh into separate pieces,
+     then reports any piece that neither reaches the print floor nor overlaps a
+     piece that does (see the support logic below). The overlap test is by
+     bounding box, so a part floating inside a hollow body, or in the empty corner
+     of an L-shaped one, isn't caught.
      Returns true/false, or null when the model is too large to check. */
   function detectFloating(verts) {
     const nTri = Math.floor(verts.length / 9);
@@ -335,22 +343,52 @@
       }
     }
 
-    // Find the minimum floor-axis value for each component
-    const compMin = new Map();
+    // Bounding box of each component, [minX, minY, minZ, maxX, maxY, maxZ]
+    const boxes = new Map();
     for (let t = 0; t < nTri; t++) {
       const root = find(t);
+      let box = boxes.get(root);
+      if (!box) {
+        box = new Float64Array([Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]);
+        boxes.set(root, box);
+      }
       for (let v = 0; v < 3; v++) {
-        const val = verts[t * 9 + v * 3 + floorOff];
-        const cur = compMin.get(root);
-        if (cur === undefined || val < cur) compMin.set(root, val);
+        const b = t * 9 + v * 3;
+        for (let a = 0; a < 3; a++) {
+          const val = verts[b + a];
+          if (val < box[a])     box[a]     = val;
+          if (val > box[a + 3]) box[a + 3] = val;
+        }
       }
     }
+    const pieces = [...boxes.values()];
+    const n      = pieces.length;
 
-    // Any component whose closest point to the floor is significantly above it = floating
-    for (const minVal of compMin.values()) {
-      if (minVal > globalFloorMin + tol) return true;
+    // A piece is supported if it reaches the print floor, or (below) if it
+    // overlaps a supported piece — a letter inlaid in a plate, a layer of
+    // artwork in a disc, a part nested inside a larger body. Those print fine
+    // even though they're separate shells that never touch the bed. Support
+    // spreads through chains of overlapping pieces. Only a piece that hangs
+    // clear of everything beneath it is floating.
+    const supported = new Uint8Array(n);
+    const queue = [];
+    for (let i = 0; i < n; i++) {
+      if (pieces[i][floorOff] <= globalFloorMin + tol) { supported[i] = 1; queue.push(i); }
     }
-    return false;
+    // Bounding boxes overlap, allowing the same tolerance used for the floor
+    const overlaps = (a, b) => {
+      for (let k = 0; k < 3; k++) if (a[k] > b[k + 3] + tol || b[k] > a[k + 3] + tol) return false;
+      return true;
+    };
+    if (n <= MAX_PIECES_FOR_OVERLAP_TEST) {
+      for (let q = 0; q < queue.length; q++) {
+        const s = pieces[queue[q]];
+        for (let i = 0; i < n; i++) {
+          if (!supported[i] && overlaps(pieces[i], s)) { supported[i] = 1; queue.push(i); }
+        }
+      }
+    }
+    return queue.length < n;
   }
 
   // "Cool Boat.stl" -> "Cool Boat"; strips the extension and any characters that
@@ -492,7 +530,7 @@
       checking: { text: '⏳ Checking for floating geometry…', bg: '#1e2133', fg: '#8892c8',
                   tip: 'Checking whether any part of the model is disconnected from the print bed…' },
       floating: { text: '⚠️ Floating geometry detected', bg: '#7a3800', fg: '#ffab40',
-                  tip: 'One or more parts of this model are not connected to the print bed and will not print correctly.' },
+                  tip: 'One or more parts of this model hang above the print bed without touching or overlapping the rest of it, and will not print correctly.' },
       clear:    { text: '✓ No floating geometry', bg: '#12331f', fg: '#6fcf97',
                   tip: 'No part of this model is floating above the print bed.' },
       skipped:  { text: 'Floating check skipped (model too large)', bg: '#1e2133', fg: '#8892c8',
