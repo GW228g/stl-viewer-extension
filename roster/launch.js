@@ -1,7 +1,7 @@
 // Adds a "Print checklist" button to Classroom's student-work page, when the teacher has turned
 // the feature on in the extension's popup. The button lives on <body>, outside the parts of the page
-// Classroom re-renders, and is positioned over the right end of the page's tab bar ("Instructions |
-// Student work"); if that bar isn't found it floats at the top right instead. On click it reads the page, opens the
+// Classroom re-renders, and is positioned in the page's toolbar row just left of "Export to SIS"
+// (or the settings gear); if neither is found it floats at the top right, clear of the header. On click it reads the page, opens the
 // checklist tab, and hands the data over with postMessage. Nothing is stored and the data lives
 // only in memory in the two tabs.
 (function () {
@@ -28,18 +28,32 @@
     btn.innerHTML = PRINTER_ICON + '<span>Print checklist</span>';
     btn.style.cssText = BASE_STYLE;
 
-    function tabBar() {
-      return [...document.querySelectorAll('nav')].find(n => n.querySelector('a[href*="/submissions/"]')) || null;
+    const HEADER_CLEARANCE = 72;   // px: keeps the button below Classroom's sticky top bar
+
+    const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+
+    // The element to sit beside: the "Export to SIS" button, else a settings button in the toolbar row.
+    function anchor() {
+      const buttons = [...document.querySelectorAll('button, [role="button"]')].filter(b => b !== btn && visible(b));
+      const export_ = buttons.find(b => /^export to sis/i.test((b.textContent || '').trim()));
+      if (export_) return export_;
+      return buttons.find(b => {
+        const r = b.getBoundingClientRect();
+        return /settings/i.test(b.getAttribute('aria-label') || '') && r.top > HEADER_CLEARANCE - 20 && r.top < 400;
+      }) || null;
     }
 
-    // Line the button up with the tab bar's right end when there is room; otherwise float it.
+    // Sit just left of the anchor, vertically centered on it (never under the top bar).
     function place() {
       if (btn.parentElement !== document.body) document.body.appendChild(btn);
-      const bar = tabBar();
-      const rect = bar && bar.getBoundingClientRect();
-      const roomy = rect && rect.width >= 700 && rect.height > 0 && rect.bottom > 0;
-      const top = roomy ? rect.top + (rect.height - BUTTON_HEIGHT) / 2 : 76;
-      btn.style.cssText = BASE_STYLE + `position:fixed;right:24px;top:${Math.round(top)}px;display:inline-flex;`;
+      const a = anchor();
+      let top = HEADER_CLEARANCE + 12, right = 24;
+      if (a) {
+        const r = a.getBoundingClientRect();
+        top = Math.max(r.top + (r.height - BUTTON_HEIGHT) / 2, HEADER_CLEARANCE + 4);
+        right = Math.max(document.documentElement.clientWidth - r.left + 12, 24);
+      }
+      btn.style.cssText = BASE_STYLE + `position:fixed;right:${Math.round(right)}px;top:${Math.round(top)}px;display:inline-flex;`;
     }
 
     // Classroom is a single-page app and re-renders often, so keep the button in step with it.
