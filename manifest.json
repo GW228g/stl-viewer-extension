@@ -36,7 +36,7 @@
     },
     {
       "matches": ["https://classroom.google.com/*"],
-      "js": ["roster/scrape.js", "roster/launch.js"],
+      "js": ["roster/anonymize.js", "roster/debug.js", "roster/scrape.js", "roster/launch.js"],
       "run_at": "document_idle"
     }
   ],
