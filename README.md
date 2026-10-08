@@ -1,6 +1,6 @@
 # STL Viewer for Google Classroom
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.1-blue)
 ![Manifest](https://img.shields.io/badge/manifest-v3-brightgreen)
 ![Chrome Extension](https://img.shields.io/badge/platform-Chrome-yellow?logo=googlechrome&logoColor=white)
 ![Status](https://img.shields.io/badge/status-developer%20mode%20only-orange)
