@@ -8,6 +8,11 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "STL Viewer settings",
+    "default_popup": "roster/popup.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -31,7 +36,7 @@
     },
     {
       "matches": ["https://classroom.google.com/*"],
-      "js": ["roster/anonymize.js", "roster/debug.js", "roster/scrape.js", "roster/launch.js"],
+      "js": ["roster/scrape.js", "roster/launch.js"],
       "run_at": "document_idle"
     }
   ],

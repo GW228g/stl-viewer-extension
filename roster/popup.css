@@ -1,0 +1,31 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  width: 320px; margin: 0; padding: 16px;
+  font: 13px/1.4 "Google Sans", Roboto, system-ui, sans-serif;
+  background: Canvas; color: CanvasText;
+}
+h1 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+
+.option {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 12px; border: 1px solid color-mix(in srgb, CanvasText 18%, transparent); border-radius: 10px;
+  cursor: pointer;
+}
+.text { display: flex; flex-direction: column; gap: 4px; }
+.text small { color: color-mix(in srgb, CanvasText 65%, transparent); font-size: 12px; }
+
+.switch {
+  appearance: none; flex: none; position: relative; width: 36px; height: 20px; margin: 2px 0 0;
+  border-radius: 10px; background: color-mix(in srgb, CanvasText 30%, transparent);
+  transition: background .15s; cursor: pointer;
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.switch:checked { background: #1a73e8; }
+.switch:checked::after { transform: translateX(16px); }
+.switch:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+
+.note { margin: 12px 2px 0; font-size: 11.5px; color: color-mix(in srgb, CanvasText 60%, transparent); }
