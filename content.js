@@ -353,7 +353,29 @@
     return false;
   }
 
-  function openViewer(stl) {
+  // "Cool Boat.stl" -> "Cool Boat"; strips the extension and any characters that
+  // are illegal in file names. Falls back to "stl-preview" when no name is known.
+  function screenshotBase(fileName) {
+    const base = (fileName || '')
+      .replace(/^.*[\\/]/, '')
+      .replace(/\.stl$/i, '')
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+      .trim();
+    return base || 'stl-preview';
+  }
+
+  // Best-effort guess at the submitted file's name when the download response
+  // doesn't carry one: an .stl link's path, else any "name.stl" text on the page.
+  function guessFileName(url) {
+    try {
+      const m = new URL(url).pathname.match(/([^/]+\.stl)$/i);
+      if (m) return decodeURIComponent(m[1]);
+    } catch { /* not a parseable URL */ }
+    const t = (document.body.innerText || '').match(/[^\s\n\/\\]+(?: [^\s\n\/\\]+)*?\.stl\b/i);
+    return t ? t[0] : null;
+  }
+
+  function openViewer(stl, fileName) {
     const { cx, cy, cz, size, dx, dy, dz, minY } = boundingBox(stl.verts);
 
     // Auto-orient: pre-rotate the model's "up" axis (see determineUpAxis) to map
@@ -568,7 +590,7 @@
       ctx.drawImage(canvas, 0, BAR_H);
 
       const link    = document.createElement('a');
-      link.download = 'stl-preview.png';
+      link.download = `${screenshotBase(fileName)}-screenshot.png`;
       link.href     = comp.toDataURL('image/png');
       link.click();
     };
@@ -956,7 +978,7 @@
         const stl = parseSTL(buf);
         if (stl.count === 0) throw new Error('No triangles found — is this actually an STL file?');
 
-        openViewer(stl);
+        openViewer(stl, response.filename || guessFileName(fetchUrl));
 
         // Reset button so it's ready to use again after the viewer is closed
         btn.disabled = false;
