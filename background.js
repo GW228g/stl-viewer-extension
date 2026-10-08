@@ -25,7 +25,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
       }
 
-      sendResponse({ ok: true, b64: btoa(binary) });
+      sendResponse({
+        ok: true,
+        b64: btoa(binary),
+        filename: filenameFromDisposition(res.headers.get('content-disposition')),
+      });
     })
     .catch(err => {
       sendResponse({ ok: false, error: err.message });
@@ -33,3 +37,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   return true; // Keep the message channel open for the async response
 });
+
+// Pull the real file name out of a Content-Disposition header, preferring the
+// RFC 5987 `filename*=UTF-8''…` form (handles non-ASCII names) over `filename="…"`.
+function filenameFromDisposition(header) {
+  if (!header) return null;
+  try {
+    const star = header.match(/filename\*\s*=\s*(?:UTF-8|utf-8)?'[^']*'([^;]+)/i);
+    if (star) return decodeURIComponent(star[1].trim());
+    const plain = header.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+    if (plain) return (plain[1] || plain[2]).trim();
+  } catch { /* malformed header — fall through to null */ }
+  return null;
+}
