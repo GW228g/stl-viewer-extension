@@ -119,6 +119,14 @@ practices tab.
   to upload as-is. Shows the grid floor, dimensions, volume and weight with
   the PLA/PETG and infill selectors, and the green "No floating geometry"
   pill.
-- The Store allows several screenshots. A second one showing the orange
-  "Floating geometry detected" warning on a model that actually has a
-  disconnected part would show the feature that matters most to teachers.
+- [docs/screenshot-floating.jpg](screenshot-floating.jpg) — also exactly
+  1280×800. A keychain whose "STL" letters hover above the plate, with the
+  orange "Floating geometry detected" warning in the toolbar. This is a
+  purpose-built demo model, not a student file:
+  [docs/demo-floating-keychain.stl](demo-floating-keychain.stl) is the exact
+  file, so you can upload it to Drive and see the warning yourself. The
+  extension UI in the image is the real one.
+  Suggested caption: "Catch letters and parts that aren't attached to the
+  print bed before they fail."
+
+Upload the Benchy shot first so it's the main image, then this one.
