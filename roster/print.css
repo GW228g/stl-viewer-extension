@@ -51,3 +51,5 @@ h1 { font-size: 15px; margin: 0 0 2px; }
 .warn { margin: 0 0 6px; padding: 6px 10px; background: #fef7e0; border: 1px solid #f9ab00; border-radius: 4px; font-size: 12px; }
 .note { color: #b06000; font-style: italic; }
 @media print { #warnings { display: none; } }
+
+.assignment { margin: 0 0 2px; font-size: 12px; font-weight: 600; color: #333; }
