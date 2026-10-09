@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print Checklist</title>
+<link rel="stylesheet" href="print.css">
+</head>
+<body>
+  <div class="controls">
+    <strong>Print checklist</strong>
+    <label>Group by
+      <select id="mode">
+        <option value="color">Color</option>
+        <option value="student">Student</option>
+      </select>
+    </label>
+    <label>Sort names by
+      <select id="sort">
+        <option value="last">Last name</option>
+        <option value="first">First name</option>
+      </select>
+    </label>
+    <span class="hint">A <b>?</b> marks a color guess. Use the dropdown on any row to change its color.</span>
+    <button id="print" type="button">Print / Save as PDF</button>
+  </div>
+
+  <div id="warnings"></div>
+  <main id="sheet"><p class="wait">Waiting for the roster from Classroom...
+    If this stays empty, go back to the Classroom tab and click "Print checklist" again.</p></main>
+
+  <script src="colors.js"></script>
+  <script src="print.js"></script>
+</body>
+</html>
