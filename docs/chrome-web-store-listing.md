@@ -4,7 +4,7 @@ Copy-paste source for the Developer Dashboard forms. Character counts are
 called out where the Store enforces a limit — verify against the live form,
 since Store limits/fields do drift over time.
 
-**Current for v1.4.2** (2026-10-08). Update the feature list below whenever a
+**Current for v1.5.0** (2026-10-09). **Not being submitted yet.**. Update the feature list below whenever a
 release adds or changes a user-visible feature.
 
 ---
@@ -12,7 +12,7 @@ release adds or changes a user-visible feature.
 ## Package to upload
 
 `stl-viewer-extension.zip` from the
-[v1.4.2 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.4.2)
+[v1.5.0 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.5.0)
 (manifest, `content.js`, `background.js`, `icons/`). The manifest version
 must be higher than whatever was last uploaded to the Store.
 
@@ -61,10 +61,12 @@ FEATURES
   weight estimate and floating-geometry result in the header, named after
   the student's file (e.g. "Cool Boat-screenshot.png") to send back as
   feedback
+• Optional Print checklist (off by default) — one printable page listing each
+  student and their STL file, grouped by colour, for planning your prints
 • Nothing stored, nothing tracked — the file is loaded into memory only to
   render it, and is discarded the moment you close the viewer (the only
-  thing ever saved is a PNG you choose to export). No accounts, no
-  analytics, no ads, no data ever leaves your browser.
+  things ever saved are a PNG you choose to export and two on/off switches).
+  No accounts, no analytics, no ads, no data ever leaves your browser.
 
 WHO IT'S FOR
 
@@ -74,8 +76,8 @@ Google Classroom.
 
 PRIVACY
 
-This extension does not collect, store, or transmit any data. Full privacy
-policy: https://maker404.com/stl-viewer-privacy
+This extension does not collect or transmit any data; it only remembers two
+on/off switches. Full privacy policy: https://maker404.com/stl-viewer-privacy
 
 Built by Maker404 — free tools for K-12 makers and tech educators.
 https://maker404.com
@@ -101,6 +103,9 @@ This extension adds a "View in 3D" button to Google Classroom and Google
 Drive whenever an STL file can't be previewed, so a teacher can inspect the
 3D model directly in the browser without downloading it.
 ```
+
+If the Print checklist ships in the same listing, widen this statement first — see
+[CHROMEWEBSTORE.md](../CHROMEWEBSTORE.md) ("Open decision before submitting").
 
 ---
 

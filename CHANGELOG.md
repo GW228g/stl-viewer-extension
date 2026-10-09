@@ -4,6 +4,38 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.5.0] — 2026-10-09
+
+### Added
+- **Print checklist (optional, off by default).** A button on an assignment's
+  Student work page that opens a one-page printable list of every student and
+  their STL file, grouped by the colour in the file name (a **?** marks a guess,
+  and a dropdown on each row changes it), with Color and Student views, sorting by
+  first or last name, and Print / Save as PDF. It reads the page only when the
+  button is clicked, keeps the list in memory in an extension tab, and never saves
+  or sends it. Built from a real Student work page's structure, so it depends on
+  Classroom's current layout and may need updating if Google changes it
+- **Settings popup** behind the extension's toolbar icon, with the on/off switch for
+  the checklist, and under *Advanced* a **Troubleshooting tool** (also off by
+  default) that copies an outline of a Classroom page with all text, names, file
+  names and ids removed, to help repair the checklist when the page changes
+
+### Changed
+- **New `storage` permission**, used only to remember those two on/off switches
+  (`chrome.storage.sync`). Chrome shows no new permission warning for it. The
+  extension also adds a second content script on `classroom.google.com`, a toolbar
+  popup, and makes `roster/print.html` web-accessible to Classroom pages; host
+  permissions are unchanged
+- **Privacy statements updated** (README, privacy policy, store notes): they said
+  the extension saves nothing and never reads student names. Now they say it saves
+  two on/off switches, and that with the checklist switched on and clicked it reads
+  student and attachment names in the browser only. The viewer itself
+  (`content.js`, `background.js`) is unchanged since 1.4.2
+- The release zip now includes the `roster/` folder, without its tests, fixtures and
+  mock data
+
+---
+
 ## [1.4.2] — 2026-10-08
 
 ### Fixed

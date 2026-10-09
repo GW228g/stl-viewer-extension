@@ -1,5 +1,5 @@
 STL VIEWER FOR GOOGLE CLASSROOM — PROJECT RECAP
-For Claude Code handoff · current for v1.4.2 (2026-10-08)
+For Claude Code handoff · current for v1.5.0 (2026-10-09)
 =========================================================
 
 WHAT THIS IS
@@ -22,18 +22,18 @@ Intended to be published to the Chrome Web Store under the Maker404 brand
 WHERE THINGS STAND
 ------------------
 Repo:      https://github.com/GW228g/stl-viewer-extension (public, MIT)
-Version:   1.4.2 — latest GitHub release, zip attached (see RELEASING below)
-Branches:  main is the source of truth. All work happens on main.
-           feature/print-roster is a LOCAL-ONLY dev branch (never pushed): an opt-in
-           "Print checklist" button on a Classroom assignment's Student work page that
-           makes a one-page list of every student and their STL file, grouped by
-           colour, for print planning (a roster/ folder plus a settings popup).
-           Leave it alone unless James says otherwise. It predates 1.4.1/1.4.2, so
-           merge main INTO it first; manifest.json will conflict.
+Version:   1.5.0 — latest GitHub release, zip attached (see RELEASING below)
+Branches:  main is the source of truth; all work happens on main. The optional "Print
+           checklist" feature (roster/ folder + settings popup) was developed on
+           feature/print-roster and merged into main on 2026-10-09 (a3b8e49). Local
+           branch/tag leftovers may exist (a stale local v1.4.1 tag points at the wrong
+           commit; GitHub's is right — never force-push tags).
+Web Store: NOT being submitted yet (James, 2026-10-09). Everything is drafted; see OPEN ITEMS.
 Installed: James loads it unpacked (chrome://extensions → Developer mode → Load
            unpacked). He reported that 1.4.1 "worked great" in his own install.
            1.4.2 (floating-check change) has been tested in a harness but not yet in
-           his real install.
+           his real install. 1.5.0 adds the optional Print checklist (his own feature,
+           built from a real Student work page); the viewer code is unchanged from 1.4.2.
 
 
 FILES
@@ -46,6 +46,20 @@ background.js          Service worker. Fetches the STL for the content script
 content.js             Everything else, in one IIFE (no modules, nothing exported):
                        detection, STL parsing, geometry analysis, WebGL renderer, UI.
 icons/                 16/48/128 PNG (dark rounded square, blue isometric cube)
+roster/                OPTIONAL Print checklist (off by default). A second content script on
+                       classroom.google.com plus a toolbar popup:
+                         scrape.js      reads the Student work page (names, status, attachments)
+                                        — relies on Classroom's obfuscated class names; brittle
+                         launch.js      adds the "Print checklist" button when switched on
+                         print.html/js/css  the printable sheet, opened in an extension tab; data
+                                        arrives by postMessage, origin-checked both ways
+                         colors.js      colour-word grouping of file names (+ test-colors.js)
+                         popup.html/js/css  the two switches, saved with chrome.storage.sync
+                         debug.js + anonymize.js  "Copy page structure" tool (Advanced, off by
+                                        default): page outline with ALL text removed
+                         mock-data.js, *-fixture.html, test-colors.js  dev-only; NOT in the zip
+                       No network calls anywhere in roster/. Student names are read in memory
+                       only when the button is clicked, never stored or sent.
 README.md              User-facing docs, install steps, badges
 CHANGELOG.md           Every release, newest first. Keep it current.
 CHROMEWEBSTORE.md      Permission justifications + data-usage answers for the Store.
@@ -180,7 +194,11 @@ are all zero (some CAD tools), face normals are computed from edge cross product
 
 PERMISSIONS  (see CHROMEWEBSTORE.md for the justifications)
 -----------
-No "permissions" array at all. host_permissions:
+permissions: ["storage"] — only for the two on/off switches (rosterEnabled, rosterDebug) in
+chrome.storage.sync. No warning at install/update. The infill/material choice is still
+in-memory only. Also: "action" popup, a second content script (classroom only), and
+web_accessible_resources for roster/print.html (classroom only).
+host_permissions:
   classroom.google.com, drive.google.com, drive.usercontent.google.com,
   docs.google.com, *.googleusercontent.com
 Content-script matches: classroom, drive, docs only.
@@ -200,18 +218,21 @@ RELEASING
    python3 -m json.tool manifest.json.
 6. Commit, push to main.
 7. Zip a folder "stl-viewer-extension/" containing ONLY manifest.json, content.js,
-   background.js and icons/ (no docs, no .git). Check it byte-for-byte against git
-   (git hash-object vs git rev-parse HEAD:path).
+   background.js, icons/ and roster/ — minus roster/test-*, roster/*-fixture.html and
+   roster/mock-data.js (no docs, no .git). Build it from `git ls-tree HEAD`, not the working
+   copy, and check it byte-for-byte against git (git hash-object vs git rev-parse HEAD:path).
 8. gh release create vX stl-viewer-extension.zip --latest --notes "…"
    James asks for releases explicitly — don't publish one unprompted.
 Versioning: new user-visible feature = minor; bug fix only = patch.
-Releases so far: 1.2.0 · 1.2.1 · 1.3.0 · 1.4.0 · 1.4.1 · 1.4.2.
+Releases so far: 1.2.0 · 1.2.1 · 1.3.0 · 1.4.0 · 1.4.1 · 1.4.2 · 1.5.0.
   1.2.0 floating detection, dimensions, reset view, Save PNG
   1.2.1 Z-up fix, drive.usercontent permission, download-URL bug, contrast, icons
   1.3.0 volume + estimated weight + infill selector (PLA)
   1.4.0 PETG, floating-status pill, 1M-triangle limit, toolbar wrap
   1.4.1 Save PNG named after the student's file
   1.4.2 floating check ignores embedded pieces
+  1.5.0 optional Print checklist + settings popup; adds the storage permission; privacy
+        docs rewritten for it
 
 
 TESTING
@@ -230,6 +251,12 @@ repo; recreate it as needed):
     Click the button, find the toolbar (the div with style.minHeight === '52px'), read
     its spans, click Save PNG and read the intercepted anchor's download name.
   - The same setup produces the 1280x800 Store screenshots.
+Roster feature: run roster/test-colors.js (node). Its scrape/anonymise/print/launch logic can be
+exercised in a normal page with a stubbed window.chrome (see roster/*-fixture.html).
+Chrome 137+ ignores --load-extension; use the DevTools Extensions.loadUnpacked method with
+--enable-unsafe-extension-debugging. In this setup it registers the manifest (returns an id)
+but the extension stayed blocked in headless, so the popup/storage/real-click flow has only
+been verified by James in his own Chrome, not by automation.
 Never claim a UI change works from "node --check" alone.
 
 
@@ -263,7 +290,7 @@ KNOWN LIMITATIONS
 
 OPEN ITEMS
 ----------
-Chrome Web Store (everything below is drafted; nothing submitted):
+Chrome Web Store (NOT submitting yet; everything below is drafted, nothing submitted):
   - Pay the $5 developer registration, verify identity.
   - Publish docs/privacy-policy.md at maker404.com/stl-viewer-privacy.
   - Fill the Privacy practices tab from CHROMEWEBSTORE.md; copy text from
@@ -271,5 +298,14 @@ Chrome Web Store (everything below is drafted; nothing submitted):
     (Benchy first). Expect closer review than usual because of the Google host
     permissions.
   - Decide whether to rebrand the manifest name/description to Maker404.
+  - DECIDE the single-purpose question: the Print checklist is a second feature. Widen the
+    stated purpose or ship it separately (see CHROMEWEBSTORE.md, "Open decision").
+  - DECIDE how to answer the PII / website-content disclosure given that the checklist
+    reads student names locally (CHROMEWEBSTORE.md has the facts; re-read Google's
+    definition of "collect" first).
+  - Republish docs/privacy-policy.md (it changed on 2026-10-09: storage + student names).
+Known risk: roster/scrape.js depends on Classroom's obfuscated class names (J33wTc, lt5Mnc,
+K013Jb, HrdP0 …); if Google changes the page the checklist warns "couldn't find any student
+cards" — use the Troubleshooting tool's anonymised outline to repair it.
 Ideas on the README roadmap: touch/stylus support, configurable printer bed size for the
 dimension check, colour-coding by Z layer for wall thickness.
