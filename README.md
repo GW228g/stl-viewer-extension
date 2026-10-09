@@ -1,6 +1,6 @@
 # STL Viewer for Google Classroom
 
-![Version](https://img.shields.io/badge/version-1.4.2-blue)
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
 ![Manifest](https://img.shields.io/badge/manifest-v3-brightgreen)
 ![Chrome Extension](https://img.shields.io/badge/platform-Chrome-yellow?logo=googlechrome&logoColor=white)
 ![Status](https://img.shields.io/badge/status-developer%20mode%20only-orange)
@@ -24,7 +24,8 @@ When a student submits an STL file and Google Classroom shows "No preview availa
 - **Auto-orient** — sets each model on the grid the way it would sit on your print bed, following Tinkercad's own orientation: a standing model stands up, and a flat keychain lies flat
 - **Reset View button** — one click to get back to the default angle
 - **Save PNG** — exports the current view with its toolbar details (dimensions, weight, floating-check result) as an image to send back to a student as feedback. The file is named after the student's file, e.g. `Cool Boat-screenshot.png`
-- **Nothing stored** — the STL loads into memory for rendering only and is never written to disk. The only thing that can be saved is the PNG you choose to export with Save PNG
+- **Print checklist (optional, off by default)** — a button on an assignment's Student work page that makes a one-page printable list of every student and their STL file, grouped by colour, for print planning. Switch it on from the extension's toolbar icon
+- **Nothing stored** — the STL loads into memory for rendering only and is never written to disk. The only things the extension ever saves are the PNG you choose to export with Save PNG and the two on/off switches for the optional features
 
 ---
 
@@ -86,6 +87,18 @@ Open a Google Classroom assignment where a student has submitted an STL file. Yo
 
 ---
 
+## Print checklist (optional)
+
+Off by default. To use it:
+
+1. Click the extension's icon in the Chrome toolbar and switch on **Print checklist**. A Classroom tab you have open reloads so the button appears.
+2. Open an assignment's **Student work** page, with all students showing, and click **Print checklist** (it sits near *Export to SIS*).
+3. A new tab opens with a one-page list: each student and their STL file, grouped by the colour in the file name (**?** marks a guess; use the dropdown on a row to change it). Switch between *Color* and *Student* views, sort by first or last name, then **Print / Save as PDF**.
+
+It reads the page in your browser only; nothing is saved or sent anywhere (see Privacy below). It depends on how Classroom lays out that page, so if Google changes it the checklist may stop finding students. Under **Advanced** in the same popup there is a *Troubleshooting tool* that copies an outline of the page with all text removed, to help fix it.
+
+---
+
 ## Updating
 
 Because this is an unpacked extension, Chrome Sync will not push updates to your other computers automatically. To update:
@@ -98,9 +111,11 @@ Because this is an unpacked extension, Chrome Sync will not push updates to your
 
 ## Privacy
 
-This extension does not collect, store, or transmit any data.
+This extension does not collect or transmit any data, and it has no server. The only thing it saves is two on/off switches for its optional features (using Chrome's extension storage, which Chrome Sync may sync across your own browsers); no names, files, or models are ever saved.
 
 When you click View in 3D, the STL file is fetched from Google Drive into browser memory using your existing Google session. It is parsed and rendered on your GPU, then released when you close the viewer. The STL itself is never written to disk. The only file the extension ever creates is the PNG image you choose to save with Save PNG, which your browser downloads like any other file and which is never sent anywhere. No analytics, no tracking, no external servers.
+
+The optional Print checklist, when you switch it on and click its button, reads the student names, submission status and attachment names on that Student work page, plus the class name and assignment title. It does this in your browser, keeps the list in memory in a tab that you can close, and never saves or sends it. The *Troubleshooting tool* copies a page outline with all text removed, and only when you click Copy. The full statement is in [docs/privacy-policy.md](docs/privacy-policy.md).
 
 ---
 
@@ -113,6 +128,8 @@ The extension requires these host permissions to fetch files from Google Drive u
 - `https://drive.usercontent.google.com/*`
 - `https://docs.google.com/*`
 - `https://*.googleusercontent.com/*`
+
+The extension also requests the `storage` permission, used only to remember the two on/off switches for the optional features.
 
 See [CHROMEWEBSTORE.md](CHROMEWEBSTORE.md) for the justification behind each permission and the full data usage disclosure.
 
