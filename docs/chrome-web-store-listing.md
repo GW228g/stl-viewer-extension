@@ -77,7 +77,7 @@ Google Classroom.
 PRIVACY
 
 This extension does not collect or transmit any data; it only remembers two
-on/off switches. Full privacy policy: https://maker404.com/stl-viewer-privacy
+on/off switches. Full privacy policy: https://maker404.com/privacy/stl-viewer/
 
 Built by Maker404 — free tools for K-12 makers and tech educators.
 https://maker404.com

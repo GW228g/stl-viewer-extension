@@ -7,7 +7,7 @@ teachers preview STL 3D files submitted by students in Google Classroom,
 without downloading them. This page explains exactly what the extension does
 and does not do with your data.
 
-> Publish this page at a stable URL (e.g. `maker404.com/stl-viewer-privacy`)
+> Publish this page at a stable URL (e.g. `maker404.com/privacy/stl-viewer/`)
 > and use that URL in the Chrome Web Store listing's privacy policy field.
 
 ## Summary

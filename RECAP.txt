@@ -68,7 +68,7 @@ LICENSE                MIT, "Maker404"
 docs/
   chrome-web-store-listing.md   Copy-paste source for the Store forms (descriptions,
                                 single purpose, category, screenshots, package link)
-  privacy-policy.md             Ready to publish at maker404.com/stl-viewer-privacy
+  privacy-policy.md             Ready to publish at maker404.com/privacy/stl-viewer/
   blog-post-draft.md            maker404.com announcement draft
   screenshot.jpg                3DBenchy, exactly 1280x800 (README + Store)
   screenshot-floating.jpg       Hovering-letters demo with the warning, 1280x800
@@ -292,7 +292,7 @@ OPEN ITEMS
 ----------
 Chrome Web Store (NOT submitting yet; everything below is drafted, nothing submitted):
   - Pay the $5 developer registration, verify identity.
-  - Publish docs/privacy-policy.md at maker404.com/stl-viewer-privacy.
+  - Publish docs/privacy-policy.md at maker404.com/privacy/stl-viewer/.
   - Fill the Privacy practices tab from CHROMEWEBSTORE.md; copy text from
     docs/chrome-web-store-listing.md; upload the zip and both screenshots
     (Benchy first). Expect closer review than usual because of the Google host

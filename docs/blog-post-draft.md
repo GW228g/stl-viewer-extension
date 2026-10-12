@@ -64,7 +64,7 @@ quick visual feedback ("hey, this part's floating — fix before we print").
 The file never leaves your browser. It's loaded into memory just long enough
 to render it, and released the moment you close the viewer. Nothing is
 uploaded, logged, or stored anywhere — not by this extension, not by
-Maker404. [Full privacy policy →](/stl-viewer-privacy)
+Maker404. [Full privacy policy →](/privacy/stl-viewer/)
 
 ### Get it
 
