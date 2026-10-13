@@ -4,6 +4,15 @@ All notable changes to STL Viewer for Google Classroom are documented here.
 
 ---
 
+## [1.5.1] — 2026-10-13
+
+### Fixed
+- **Print checklist could include students from the previous class.** Classroom
+  keeps the old class's student cards in the page, hidden, when you switch classes
+  without refreshing. The checklist now reads only the students that are showing
+
+---
+
 ## [1.5.0] — 2026-10-09
 
 ### Added

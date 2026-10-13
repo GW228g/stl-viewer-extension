@@ -7,6 +7,10 @@
   const clean = s => String(s || '').replace(/\s+/g, ' ').trim();
   const textOf = el => clean(el && el.textContent);
 
+  // Classroom is a single-page app: after switching classes it can keep the previous class's
+  // cards in the DOM, hidden. Only elements that are actually showing count.
+  const shown = el => el.getClientRects().length > 0 && !el.closest('[aria-hidden="true"]');
+
   // One element per student: the card that carries data-submission-id.
   function findCards(doc) {
     let cards = [...doc.querySelectorAll('[data-submission-id][data-kami-view-time]')];
@@ -16,7 +20,7 @@
         .map(m => m.parentElement && m.parentElement.parentElement)
         .filter(Boolean);
     }
-    return [...new Set(cards)];
+    return [...new Set(cards)].filter(shown);
   }
 
   function nameOf(card) {
@@ -55,7 +59,7 @@
   // Class name and section (the second line, e.g. "Period 3"). The page header has a link to the
   // class whose two spans are name and section; the sidebar's current class has the same pair.
   function courseOf(doc) {
-    const spans = [...doc.querySelectorAll('h1 a[href*="/c/"] span.Vu2fZd')].map(textOf).filter(Boolean);
+    const spans = [...doc.querySelectorAll('h1 a[href*="/c/"] span.Vu2fZd')].filter(shown).map(textOf).filter(Boolean);
     if (spans.length) return { course: spans[0], section: spans[1] || '' };
     const current = 'a[aria-current="page"][data-id]';
     const course = textOf(doc.querySelector(current + ' .XL4gNd'));
@@ -82,7 +86,7 @@
     if (!students.length) {
       warnings.push("Couldn't find any student cards. Open the assignment's Student work page with all students showing, then try again.");
     } else {
-      const expected = doc.querySelectorAll('tr[data-student-id]').length;
+      const expected = [...doc.querySelectorAll('tr[data-student-id]')].filter(shown).length;
       if (expected && expected !== students.length) {
         warnings.push(`The page lists ${expected} students but only ${students.length} submissions were read. Scroll the page so everyone loads, then try again.`);
       }
