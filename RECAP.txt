@@ -22,7 +22,7 @@ Intended to be published to the Chrome Web Store under the Maker404 brand
 WHERE THINGS STAND
 ------------------
 Repo:      https://github.com/GW228g/stl-viewer-extension (public, MIT)
-Version:   1.5.0 — latest GitHub release, zip attached (see RELEASING below)
+Version:   1.5.1 — latest GitHub release, zip attached (see RELEASING below)
 Branches:  main is the source of truth; all work happens on main. The optional "Print
            checklist" feature (roster/ folder + settings popup) was developed on
            feature/print-roster and merged into main on 2026-10-09 (a3b8e49). Local
@@ -224,7 +224,7 @@ RELEASING
 8. gh release create vX stl-viewer-extension.zip --latest --notes "…"
    James asks for releases explicitly — don't publish one unprompted.
 Versioning: new user-visible feature = minor; bug fix only = patch.
-Releases so far: 1.2.0 · 1.2.1 · 1.3.0 · 1.4.0 · 1.4.1 · 1.4.2 · 1.5.0.
+Releases so far: 1.2.0 · 1.2.1 · 1.3.0 · 1.4.0 · 1.4.1 · 1.4.2 · 1.5.0 · 1.5.1.
   1.2.0 floating detection, dimensions, reset view, Save PNG
   1.2.1 Z-up fix, drive.usercontent permission, download-URL bug, contrast, icons
   1.3.0 volume + estimated weight + infill selector (PLA)
@@ -233,6 +233,7 @@ Releases so far: 1.2.0 · 1.2.1 · 1.3.0 · 1.4.0 · 1.4.1 · 1.4.2 · 1.5.0.
   1.4.2 floating check ignores embedded pieces
   1.5.0 optional Print checklist + settings popup; adds the storage permission; privacy
         docs rewritten for it
+  1.5.1 checklist ignores hidden students left over from a previous class (SPA nav)
 
 
 TESTING

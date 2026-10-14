@@ -4,7 +4,7 @@ Copy-paste source for the Developer Dashboard forms. Character counts are
 called out where the Store enforces a limit — verify against the live form,
 since Store limits/fields do drift over time.
 
-**Current for v1.5.0** (2026-10-09). **Not being submitted yet.**. Update the feature list below whenever a
+**Current for v1.5.1** (2026-10-13). **Not being submitted yet.**. Update the feature list below whenever a
 release adds or changes a user-visible feature.
 
 ---
@@ -12,7 +12,7 @@ release adds or changes a user-visible feature.
 ## Package to upload
 
 `stl-viewer-extension.zip` from the
-[v1.5.0 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.5.0)
+[v1.5.1 release](https://github.com/GW228g/stl-viewer-extension/releases/tag/v1.5.1)
 (manifest, `content.js`, `background.js`, `icons/`). The manifest version
 must be higher than whatever was last uploaded to the Store.
 
